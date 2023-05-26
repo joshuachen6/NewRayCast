@@ -73,6 +73,14 @@ void ResourceManager::addTexture(Texture* texture) {
 	ResourceManager::textures.push_back(texture);
 }
 
+void ResourceManager::removeVertex(int id) {
+	for (int i = 0; i < vertecies.size(); i++) {
+		if (vertecies[i].ID == id) {
+			vertecies.erase(vertecies.begin() + i, vertecies.begin() + i + 1);
+		}
+	}
+}
+
 void ResourceManager::destroy() {
 	for (Texture* texture : ResourceManager::textures) {
 		delete texture;

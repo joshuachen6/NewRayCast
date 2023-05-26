@@ -15,6 +15,7 @@ public:
 	int textureID;
 	int ID;
 
+	TexturedVertex() = default;
 	TexturedVertex(Vector2f start, Vector2f end, int textureID);
 	double length();
 };

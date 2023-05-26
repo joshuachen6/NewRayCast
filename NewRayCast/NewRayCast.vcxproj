@@ -140,11 +140,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CastUtils.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="TexturedVertex.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CastUtils.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="TexturedVertex.h" />
   </ItemGroup>

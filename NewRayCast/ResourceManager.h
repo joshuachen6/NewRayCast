@@ -19,6 +19,7 @@ public:
 	static Sprite subTexture(TexturedVertex vertex, Vector2f collision ,int cols);
 	static void addVertex(TexturedVertex vertex);
 	static void addTexture(Texture* texture);
+	static void removeVertex(int id);
 	static void destroy();
 };
 
