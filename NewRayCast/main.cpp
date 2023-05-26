@@ -30,7 +30,7 @@ int main() {
 	Vector3f player(0, 0, 0);
 
 	double FOV = 3.14159265 / 2;
-	int rays = 240;
+	int rays = 120;
 
 	chrono::time_point<chrono::system_clock> last = chrono::system_clock::now();
 
@@ -90,13 +90,13 @@ int main() {
 			vector<CastResult> hits = castRay(angle, FOV, player);
 			
 			if (hits.size()) {
-				Sprite sprite = ResourceManager::subTexture(hits[0].vertex, Vector2f(hits[0].cx, hits[0].cy), xoffset);
-				double vScale = (12 / pow(hits[0].distance, 0.75)) * (720.0 / sprite.getTextureRect().height);
-				sprite.setScale(1, vScale);
-				sprite.setPosition(Vector2f(-i * xoffset + 1280 / 2 - sprite.getTextureRect().width / 2, 720 / 2 - sprite.getTextureRect().height / 2 * vScale));
-
 				//debug
 				if (!Keyboard::isKeyPressed(Keyboard::LShift)) {
+					Sprite sprite = ResourceManager::subTexture(hits[0].vertex, Vector2f(hits[0].cx, hits[0].cy), xoffset);
+					double trueDistance = hits[0].distance * cos(offset * i);
+					double vScale = (12 / pow(trueDistance, 0.75)) * (720.0 / sprite.getTextureRect().height);
+					sprite.setScale(1, vScale);
+					sprite.setPosition(Vector2f(-i * xoffset + 1280 / 2 - sprite.getTextureRect().width / 2, 720 / 2 - sprite.getTextureRect().height / 2 * vScale));
 					window.draw(sprite);
 				} else {
 					Vertex line[] = {

@@ -30,8 +30,8 @@ vector<CastResult> castRay(double angle, double FOV, Vector3f player) {
 			cx = vertex.start.x;
 		}
 
-		bool yrange = (cy - min(vertex.start.y, vertex.end.y)) > -0.5 && (cy - max(vertex.start.y, vertex.end.y)) < 0.5;
-		bool xrange = (cx - min(vertex.start.x, vertex.end.x)) > -0.5 && (cx - max(vertex.start.x, vertex.end.x)) < 0.5;
+		bool yrange = (cy - min(vertex.start.y, vertex.end.y)) > -0.5 && (cy - max(vertex.start.y, vertex.end.y)) < 1;
+		bool xrange = (cx - min(vertex.start.x, vertex.end.x)) > -0.5 && (cx - max(vertex.start.x, vertex.end.x)) < 1;
 
 		if (!(yrange && xrange)) {
 			continue;
