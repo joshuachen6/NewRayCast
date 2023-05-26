@@ -13,6 +13,7 @@ public:
 	Vector2f start;
 	Vector2f end;
 	int textureID;
+	int ID;
 
 	TexturedVertex(Vector2f start, Vector2f end, int textureID);
 	double length();

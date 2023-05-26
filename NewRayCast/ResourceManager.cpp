@@ -6,6 +6,7 @@
 
 vector<Texture*> ResourceManager::textures;
 vector<TexturedVertex> ResourceManager::vertecies;
+int ResourceManager::vertexID = 0;
 
 
 void ResourceManager::load(string file) {
@@ -47,7 +48,7 @@ void ResourceManager::load(string file) {
 						lastIndex = i + 1;
 					}
 				}
-				vertecies.push_back(TexturedVertex(start, end, textureID));
+				addVertex(TexturedVertex(start, end, textureID));
 			}
 		}
 	}
@@ -63,6 +64,8 @@ Sprite ResourceManager::subTexture(TexturedVertex vertex, Vector2f collision, in
 }
 
 void ResourceManager::addVertex(TexturedVertex vertex) {
+	vertex.ID = vertexID;
+	vertexID++;
 	ResourceManager::vertecies.push_back(vertex);
 }
 

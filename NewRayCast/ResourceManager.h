@@ -13,6 +13,7 @@ public:
 	static vector<Texture*> textures;
 	static vector<TexturedVertex> vertecies;
 	static string current;
+	static int vertexID;
 
 	static void load(string file);
 	static Sprite subTexture(TexturedVertex vertex, Vector2f collision ,int cols);
