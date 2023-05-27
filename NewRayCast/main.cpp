@@ -14,10 +14,10 @@ using namespace std;
 int main() {
 
 	Texture texture, texture1, texture2, texture3;
-	texture.loadFromFile("C:\\Users\\JC200\\Downloads\\wall.jpg");
-	texture1.loadFromFile("C:\\Users\\JC200\\Downloads\\wall1.jpg");
-	texture2.loadFromFile("C:\\Users\\JC200\\Downloads\\wall2.jpg");
-	texture3.loadFromFile("C:\\Users\\JC200\\Downloads\\wall3.jpg");
+	texture.loadFromFile("C:\\Users\\Joshua\\Downloads\\wall.jpg");
+	texture1.loadFromFile("C:\\Users\\Joshua\\Downloads\\wall1.jpg");
+	texture2.loadFromFile("C:\\Users\\Joshua\\Downloads\\wall2.jpg");
+	texture3.loadFromFile("C:\\Users\\Joshua\\Downloads\\wall3.jpg");
 	ResourceManager::addTexture(&texture);
 	ResourceManager::addTexture(&texture1);
 	ResourceManager::addTexture(&texture2);
@@ -30,13 +30,13 @@ int main() {
 	Vector3f player(0, 0, 0);
 
 	double FOV = 3.14159265 / 2;
-	int rays = 120;
+	int rays = 480;
 
 	chrono::time_point<chrono::system_clock> last = chrono::system_clock::now();
 
 	sf::RenderWindow window(sf::VideoMode(1280, 720), "TestProject");
 	while (window.isOpen()) {
-		double dt = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - last).count()/1000.0;
+		double dt = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now() - last).count()/1e9;
 		last = chrono::system_clock::now();
 
 		//cout << 1 / dt << endl;;
