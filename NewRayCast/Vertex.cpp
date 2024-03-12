@@ -7,5 +7,5 @@ Vertex::Vertex(sf::Vector2f start, sf::Vector2f end, std::string texture) {
 }
 
 double Vertex::length() {
-    return std::sqrt(std::pow(start.x - end.x, 2) + std::powf(start.y - end.y, 2));
+    return std::sqrt(std::pow(start.x - end.x, 2) + std::pow(start.y - end.y, 2));
 }

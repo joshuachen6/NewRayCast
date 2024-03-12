@@ -16,7 +16,7 @@ int main() {
 
 	World world;
 
-	world.verticies.push_back(Vertex(sf::Vector2f(100, -100), sf::Vector2f(100, 100), "C:\\Users\\JC200\\Downloads\\cpp_standard.jpg"));
+	world.verticies.push_back(Vertex(sf::Vector2f(10, -50), sf::Vector2f(10, 50), "C:\\Users\\JC200\\Downloads\\cpp_standard.jpg"));
 
 	std::chrono::time_point<std::chrono::system_clock> last = std::chrono::system_clock::now();
 
@@ -41,12 +41,12 @@ int main() {
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-			player.x += cos(player.z) * 45 * dt;
-			player.y += sin(player.z) * 45 * dt;
+			player.x += cos(player.z) * 500 * dt;
+			player.y += sin(player.z) * 500 * dt;
 		}
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-			player.x -= cos(player.z) * 45 * dt;
-			player.y -= sin(player.z) * 45 * dt;
+			player.x -= cos(player.z) * 500 * dt;
+			player.y -= sin(player.z) * 500 * dt;
 		}
 
 

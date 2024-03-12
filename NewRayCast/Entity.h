@@ -6,9 +6,9 @@
 class Entity {
 public:
 	std::string front;
-	std::string side;
+	std::vector<std::pair<std::string, float>> side;
 	sf::Vector3f location;
-	double radius;
+	sf::Vector2f size;
 
 	std::vector<Vertex> to_vertcies();
 };
