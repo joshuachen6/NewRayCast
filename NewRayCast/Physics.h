@@ -6,6 +6,8 @@
 #include <vector>
 #include "CastResult.h"
 
+#define M 100
+
 
 class Physics {
 public:
