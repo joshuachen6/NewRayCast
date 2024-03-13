@@ -17,7 +17,7 @@ Renderer::Renderer(sf::RenderWindow& window) {
 void Renderer::update(World& world, sf::Vector3f& camera, double fov, double rays) {
 	window->clear();
 	double offset = fov / rays;
-	double xoffset = 1280 / rays;
+	double xoffset = window->getSize().x / rays;
 	for (int i = -rays / 2; i < rays / 2; i++) {
 		double angle = Physics::scale_angle(offset * i + camera.z);
 
@@ -27,9 +27,9 @@ void Renderer::update(World& world, sf::Vector3f& camera, double fov, double ray
 				CastResult& closest = hits[j];
 				sf::Sprite sprite = get_column(*closest.vertex, closest.point, std::ceil(xoffset));
 				double trueDistance = closest.distance * cos(offset * i);
-				double vScale = (100 / trueDistance) * (720.0 / sprite.getTextureRect().height);
+				double vScale = (M / trueDistance) * (720.0 / sprite.getTextureRect().height);
 				sprite.setScale(1, vScale);
-				sprite.setPosition(sf::Vector2f(-i * xoffset + 1280 / 2 - sprite.getTextureRect().width / 2, 720 / 2 - sprite.getTextureRect().height / 2 * vScale));
+				sprite.setPosition(sf::Vector2f(-i * xoffset + window->getSize().x / 2 - sprite.getTextureRect().width / 2, window->getSize().y / 2 - sprite.getTextureRect().height / 2 * vScale));
 				window->draw(sprite);
 			}
 		}
