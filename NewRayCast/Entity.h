@@ -5,11 +5,7 @@
 
 class Entity {
 public:
-	std::string front;
-	std::vector<std::pair<std::string, float>> side;
+	std::string model;
 	sf::Vector3f location;
-	sf::Vector2f size;
-
-	std::vector<Vertex> to_vertcies();
 };
 

@@ -6,6 +6,15 @@
 #include <math.h>
 #include "Physics.h"
 
+//Test class
+class DumbModel : public Entity {
+public:
+	DumbModel() {
+		model = "C:\\Users\\JC200\\Downloads\\model.txt";
+		location = sf::Vector3f(100, 100, M_PI_2);
+	}
+};
+
 
 int main() {
 	sf::RenderWindow window(sf::VideoMode(1280, 720), "Game");
@@ -16,7 +25,10 @@ int main() {
 
 	World world;
 
-	world.verticies.push_back(Vertex(sf::Vector2f(M, -0.5 * M), sf::Vector2f(M, 0.5 * M), "C:\\Users\\JC200\\Downloads\\cpp_standard.jpg"));
+	world.entities.push_back(DumbModel());
+
+	world.verticies.push_back(Vertex(sf::Vector2f(1000, 1000), sf::Vector2f(1000, 900), 100, 0, "C:\\Users\\JC200\\Downloads\\rubber_duck.jpg"));
+	world.verticies.push_back(Vertex(sf::Vector2f(-1000, 1000), sf::Vector2f(-1000, 900), 100, 0, "C:\\Users\\JC200\\Downloads\\rubber_duck1.jpg"));
 
 	std::chrono::time_point<std::chrono::system_clock> last = std::chrono::system_clock::now();
 
@@ -41,15 +53,15 @@ int main() {
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-			player.x += cos(player.z) * 3 * M * dt;
-			player.y += sin(player.z) * 3 * M * dt;
+			player.x += cos(player.z) * 3 * METER * dt;
+			player.y += sin(player.z) * 3 * METER * dt;
 		}
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-			player.x -= cos(player.z) * 3 * M * dt;
-			player.y -= sin(player.z) * 3 * M * dt;
+			player.x -= cos(player.z) * 3 * METER * dt;
+			player.y -= sin(player.z) * 3 * METER * dt;
 		}
 
 
-		renderer.update(world, player, M_PI_2, 640);
+		renderer.update(world, player, M_PI_2, 240);
 	}
 }

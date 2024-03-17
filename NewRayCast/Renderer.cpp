@@ -1,8 +1,7 @@
 #include "Renderer.h"
 #include "Physics.h"
 
-sf::Sprite Renderer::get_column(Vertex& vertex, sf::Vector2f& collision, int cols) {
-	sf::Texture* texture = load_texture(vertex.texture);
+sf::Sprite Renderer::get_column(sf::Texture* texture, Vertex& vertex, sf::Vector2f& collision, int cols) {
 	sf::Sprite sprite(*texture); 
 	double scale = texture->getSize().x / vertex.length();
 	double left = sqrt(pow(collision.x - vertex.start.x, 2) + pow(collision.y - vertex.start.y, 2));
@@ -25,22 +24,22 @@ void Renderer::update(World& world, sf::Vector3f& camera, double fov, double ray
 		if (hits.size()) {
 			for (int j = hits.size() - 1; j >= 0; j--) {
 				CastResult& closest = hits[j];
-				sf::Sprite sprite = get_column(*closest.vertex, closest.point, std::ceil(xoffset));
-				double trueDistance = closest.distance * cos(offset * i);
-				double vScale = (M / trueDistance) * (720.0 / sprite.getTextureRect().height);
-				sprite.setScale(1, vScale);
-				sprite.setPosition(sf::Vector2f(-i * xoffset + window->getSize().x / 2 - sprite.getTextureRect().width / 2, window->getSize().y / 2 - sprite.getTextureRect().height / 2 * vScale));
-				window->draw(sprite);
+				sf::Texture* texture = world.load_texture(closest.vertex->texture);
+				if (texture) {
+					sf::Sprite sprite = get_column(texture, *closest.vertex, closest.point, std::ceil(xoffset));
+					double trueDistance = closest.distance * cos(offset * i);
+					double vScale = (closest.vertex->height / trueDistance) * (((double) window->getSize().y) / sprite.getTextureRect().height);
+					double height = window->getSize().y / 2 - sprite.getTextureRect().height / 2 * vScale;
+					double dist = (METER - closest.vertex->height - closest.vertex->z)/ (2 * trueDistance) * window->getSize().y;
+					sprite.setScale(1, vScale);
+					sprite.setPosition(sf::Vector2f(-i * xoffset + window->getSize().x / 2 - sprite.getTextureRect().width / 2, height+dist));
+					window->draw(sprite);
+				}
+				if (closest.entity) {
+					delete closest.vertex;
+				}
 			}
 		}
 	}
 	window->display();
-}
-
-sf::Texture* Renderer::load_texture(std::string texture) {
-	if (!textures.contains(texture)) {
-		textures[texture] = sf::Texture();
-		textures[texture].loadFromFile(texture);
-	}
-	return &textures[texture];
 }

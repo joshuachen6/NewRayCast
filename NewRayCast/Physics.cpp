@@ -15,10 +15,12 @@ std::vector<CastResult> Physics::cast_ray(World& world, sf::Vector3f& source, do
 
 	for (Entity& entity : world.entities) {
 		sf::Vector2f hit;
-		for (Vertex& vertex : entity.to_vertcies()) {
-			if (hits_vertex(vertex, hit, source, angle)) {
+		for (const Vertex& vertex : world.load_model(entity.model)) {
+			Vertex temp = vertex.translated(entity.location);
+			Vertex* transformed = new Vertex(temp);
+			if (hits_vertex(*transformed, hit, source, angle)) {
 				double distance = sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
-				hits.push_back(CastResult(sf::Vector2f(hit.x, hit.y), distance, &vertex, &entity));
+				hits.push_back(CastResult(sf::Vector2f(hit.x, hit.y), distance, transformed, &entity));
 			}
 		}
 	}
@@ -39,7 +41,7 @@ double Physics::scale_angle(double radians) {
 		radians += 2 * M_PI;
 	}
 
-	return radians;;
+	return radians;
 }
 
 bool Physics::hits_vertex(Vertex& vertex, sf::Vector2f& point, sf::Vector3f& source, double angle) {

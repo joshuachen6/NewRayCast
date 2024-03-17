@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "dependencies": [
     "sfml",
-    "boost-filesystem"
+    "boost-filesystem",
+    "boost-algorithm"
   ]
 }
