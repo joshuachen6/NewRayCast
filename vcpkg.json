@@ -4,6 +4,7 @@
   "dependencies": [
     "sfml",
     "boost-filesystem",
-    "boost-algorithm"
+    "boost-algorithm",
+    "boost-lockfree"
   ]
 }

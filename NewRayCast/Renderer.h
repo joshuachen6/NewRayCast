@@ -9,7 +9,7 @@
 class Renderer {
 private:
 	sf::RenderWindow* window;
-	sf::Sprite get_column(sf::Texture* texture, Vertex& vertex, sf::Vector2f& collision, int cols);
+	sf::Sprite* get_column(sf::Texture* texture, Vertex& vertex, sf::Vector2f& collision, int cols);
 
 public:
 	Renderer(sf::RenderWindow& window);
