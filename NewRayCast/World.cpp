@@ -2,8 +2,13 @@
 #include <fstream>
 #include <string>
 #include <boost/algorithm/string.hpp>
+#include <mutex>
+
+std::mutex texture_mutex;
+std::mutex model_mutex;
 
 sf::Texture* World::load_texture(std::string texture) {
+	std::lock_guard<std::mutex> lock(texture_mutex);
 	if (!textures.contains(texture)) {
 		textures[texture] = sf::Texture();
 		textures[texture].loadFromFile(texture);
@@ -12,6 +17,7 @@ sf::Texture* World::load_texture(std::string texture) {
 }
 
 const std::vector<Vertex>& World::load_model(std::string model) {
+	std::lock_guard<std::mutex> lock(model_mutex);
 	if (!models.contains(model)) {
 		models[model] = std::vector<Vertex>();
 		std::ifstream file(model);

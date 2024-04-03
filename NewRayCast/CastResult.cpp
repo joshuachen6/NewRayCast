@@ -5,4 +5,15 @@ CastResult::CastResult(sf::Vector2f point, double distance, Vertex* vertex, Enti
 	this->entity = entity;
 	this->point = point;
 	this->distance = distance;
+	if (entity) {
+		temp_vertex = std::shared_ptr<Vertex>(vertex);
+	}
+}
+
+CastResult::CastResult(const CastResult& other) {
+	vertex = other.vertex;
+	entity = other.entity;
+	point = other.point;
+	distance = other.distance;
+	temp_vertex = other.temp_vertex;
 }

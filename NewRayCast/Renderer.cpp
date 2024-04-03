@@ -3,6 +3,7 @@
 #include <execution>
 #include <boost/range/irange.hpp>
 #include <boost/lockfree/queue.hpp>
+#include <memory>
 
 sf::Sprite* Renderer::get_column(sf::Texture* texture, Vertex& vertex, sf::Vector2f& collision, int cols) {
 	sf::Sprite* sprite = new sf::Sprite(*texture); 
@@ -42,9 +43,6 @@ void Renderer::update(World& world, sf::Vector3f& camera, double fov, double ray
 						sprite->setPosition(sf::Vector2f(-i * xoffset + window->getSize().x / 2 - sprite->getTextureRect().width / 2, height + dist));
 						sprite_queue.push(sprite);
 					}
-					if (closest.entity) {
-						delete closest.vertex;
-					}
 				}
 			}
 		}
@@ -53,6 +51,7 @@ void Renderer::update(World& world, sf::Vector3f& camera, double fov, double ray
 		sf::Sprite* sprite;
 		sprite_queue.pop(sprite);
 		window->draw(*sprite);
+		delete sprite;
 	}
 
 	window->display();

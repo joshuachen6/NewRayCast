@@ -15,12 +15,16 @@ std::vector<CastResult> Physics::cast_ray(World& world, sf::Vector3f& source, do
 
 	for (Entity& entity : world.entities) {
 		sf::Vector2f hit;
-		for (const Vertex& vertex : world.load_model(entity.model)) {
+		const std::vector<Vertex>& verticies = world.load_model(entity.model);
+		for (const Vertex& vertex : verticies) {
 			Vertex temp = vertex.translated(entity.location);
 			Vertex* transformed = new Vertex(temp);
 			if (hits_vertex(*transformed, hit, source, angle)) {
 				double distance = sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
 				hits.push_back(CastResult(sf::Vector2f(hit.x, hit.y), distance, transformed, &entity));
+			}
+			else {
+				delete transformed;
 			}
 		}
 	}
