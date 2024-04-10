@@ -7,7 +7,7 @@
 std::mutex texture_mutex;
 std::mutex model_mutex;
 
-sf::Texture* World::load_texture(std::string texture) {
+sf::Texture* World::load_texture(const std::string& texture) {
 	std::lock_guard<std::mutex> lock(texture_mutex);
 	if (!textures.contains(texture)) {
 		textures[texture] = sf::Texture();
@@ -16,7 +16,7 @@ sf::Texture* World::load_texture(std::string texture) {
 	return &textures[texture];
 }
 
-const std::vector<Vertex>& World::load_model(std::string model) {
+const std::vector<Vertex>& World::load_model(const std::string& model) {
 	std::lock_guard<std::mutex> lock(model_mutex);
 	if (!models.contains(model)) {
 		models[model] = std::vector<Vertex>();
@@ -47,4 +47,14 @@ const std::vector<Vertex>& World::load_model(std::string model) {
 		file.close();
 	}
 	return models[model];
+}
+
+Vertex& World::add_vertex(const Vertex& vertex) {
+	verticies.push_back(vertex);
+	return verticies.back();
+}
+
+Entity& World::add_entity(const Entity& entity) {
+	entities.push_back(entity);
+	return entities.back();
 }

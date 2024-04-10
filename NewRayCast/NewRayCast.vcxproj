@@ -25,6 +25,7 @@
     <ClInclude Include="Entity.h" />
     <ClInclude Include="LivingEntity.h" />
     <ClInclude Include="Physics.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="StaticEntity.h" />
     <ClInclude Include="Vertex.h" />
@@ -38,6 +39,7 @@
     <ClCompile Include="LivingEntity.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Physics.cpp" />
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="StaticEntity.cpp" />
     <ClCompile Include="Vertex.cpp" />
