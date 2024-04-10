@@ -5,6 +5,8 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include "Physics.h"
+#include "Player.h"
+#include <iostream>
 
 //Test class
 class DumbModel : public Entity {
@@ -21,14 +23,15 @@ int main() {
 
 	Renderer renderer(window);
 
-	sf::Vector3f player;
-
 	World world;
+	world.gravity = 10;
+
+	Player& player = static_cast<Player&>(world.add_entity(Player()));
 
 	world.entities.push_back(DumbModel());
 
-	world.verticies.push_back(Vertex(sf::Vector2f(1000, 1000), sf::Vector2f(1000, 900), 100, 0, "C:\\Users\\JC200\\Downloads\\rubber_duck.jpg"));
-	world.verticies.push_back(Vertex(sf::Vector2f(-1000, 1000), sf::Vector2f(-1000, 900), 100, 0, "C:\\Users\\JC200\\Downloads\\rubber_duck1.jpg"));
+	world.verticies.push_back(Vertex(sf::Vector2f(1000, 1000), sf::Vector2f(1000, 900), 100, 0, "C:\\Users\\Joshua\\Downloads\\duck.jpg"));
+	world.verticies.push_back(Vertex(sf::Vector2f(-1000, 1000), sf::Vector2f(-1000, 900), 100, 0, "C:\\Users\\Joshua\\Downloads\\duck1.png"));
 
 	std::chrono::time_point<std::chrono::system_clock> last = std::chrono::system_clock::now();
 
@@ -46,22 +49,23 @@ int main() {
 
 		// Movement
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-			player.z = Physics::scale_angle(player.z + (4 * M_PI / 7) * dt);
+			player.location.z = Physics::scale_angle(player.location.z + (4 * M_PI / 7) * dt);
 		}
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-			player.z = Physics::scale_angle(player.z - (4 * M_PI / 7) * dt);
+			player.location.z = Physics::scale_angle(player.location.z - (4 * M_PI / 7) * dt);
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-			player.x += cos(player.z) * 3 * METER * dt;
-			player.y += sin(player.z) * 3 * METER * dt;
+			player.velocity.x += cos(player.location.z) * 3 * METER * dt;
+			player.velocity.y += sin(player.location.z) * 3 * METER * dt;
 		}
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-			player.x -= cos(player.z) * 3 * METER * dt;
-			player.y -= sin(player.z) * 3 * METER * dt;
+			player.velocity.x -= cos(player.location.z) * 3 * METER * dt;
+			player.velocity.y -= sin(player.location.z) * 3 * METER * dt;
 		}
 
-
+		Physics::apply_physics(world, dt);
 		renderer.update(world, player, M_PI_2, 240);
+		std::cout << player.location.z << std::endl;
 	}
 }

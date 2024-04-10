@@ -5,6 +5,7 @@
 #include "World.h"
 #include <vector>
 #include "CastResult.h"
+#include "Player.h"
 
 class Renderer {
 private:
@@ -13,5 +14,5 @@ private:
 
 public:
 	Renderer(sf::RenderWindow& window);
-	void update(World& world, sf::Vector3f& camera, double fov, double rays);
+	void update(World& world, Player& camera, double fov, double rays);
 };

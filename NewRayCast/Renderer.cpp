@@ -17,7 +17,7 @@ Renderer::Renderer(sf::RenderWindow& window) {
 	this->window = &window;
 }
 
-void Renderer::update(World& world, sf::Vector3f& camera, double fov, double rays) {
+void Renderer::update(World& world, Player& camera, double fov, double rays) {
 	window->clear();
 	double offset = fov / rays;
 	double xoffset = window->getSize().x / rays;
@@ -26,12 +26,15 @@ void Renderer::update(World& world, sf::Vector3f& camera, double fov, double ray
 
 	std::for_each(std::execution::par_unseq, ops.begin(), ops.end(),
 		[&](const int& i) {
-			double angle = Physics::scale_angle(offset * i + camera.z);
+			double angle = Physics::scale_angle(offset * i + camera.location.z);
 
-			std::vector<CastResult> hits = Physics::cast_ray(world, camera, angle);
+			std::vector<CastResult> hits = Physics::cast_ray(world, camera.location, angle);
 			if (hits.size()) {
 				for (int j = hits.size() - 1; j >= 0; j--) {
 					CastResult& closest = hits[j];
+					if (closest.entity == &camera) {
+						continue;
+					}
 					sf::Texture* texture = world.load_texture(closest.vertex->texture);
 					if (texture) {
 						sf::Sprite* sprite = get_column(texture, *closest.vertex, closest.point, std::ceil(xoffset));

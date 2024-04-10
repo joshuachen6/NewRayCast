@@ -7,5 +7,8 @@ class Entity {
 public:
 	std::string model;
 	sf::Vector3f location;
+	sf::Vector2f velocity;
+	sf::Vector2f acceleration;
+	double mass;
 };
 
