@@ -115,11 +115,11 @@ void Physics::apply_physics(World& world, double dt) {
 				sf::Vector2f wall_normal = sf::Vector2f(-wall_tangent.x, wall_tangent.y);
 				sf::Vector2f dist_vector = sf::Vector2f(result.point.x - entity.location.x, result.point.y - entity.location.y);
 
-				//entity.velocity = project(entity.velocity, wall_tangent);
-				//sf::Vector2f tangent_movement = project(entity.velocity, wall_normal);
-				//sf::Vector2f tangent_velocity = scale(normalize(tangent_movement), std::fmax(0, mag(dist_vector) - entity.radius));
-				//entity.location.x += tangent_velocity.x * dt;
-				//entity.location.y += tangent_velocity.y * dt;
+				entity.velocity = project(entity.velocity, wall_tangent);
+				sf::Vector2f tangent_movement = project(entity.velocity, wall_normal);
+				sf::Vector2f tangent_velocity = scale(normalize(tangent_movement), std::fmax(0, mag(dist_vector) - entity.radius));
+				entity.location.x += tangent_velocity.x * dt;
+				entity.location.y += tangent_velocity.y * dt;
 			}
 			/*
 			TODO:
@@ -165,4 +165,24 @@ double Physics::direction(sf::Vector2f vec) {
 
 sf::Vector2f Physics::project(sf::Vector2f source, sf::Vector2f target) {
 	return scale(normalize(target), dot(source, target) / mag(target));
+}
+
+double Physics::distance(sf::Vector2f a, sf::Vector2f b) {
+	return mag(a - b);
+}
+
+double Physics::to_radians(double angle) {
+	return M_PI * angle/180;
+}
+
+double Physics::to_degrees(double angle) {
+	return 180 * angle/M_PI;
+}
+
+sf::Vector2f Physics::squash(sf::Vector3f input) {
+	return sf::Vector2f(input.x, input.y);
+}
+
+sf::Vector2f Physics::mult(sf::Vector2f a, sf::Vector2f b) {
+	return sf::Vector2f(a.x * b.x, a.y * b.y);
 }

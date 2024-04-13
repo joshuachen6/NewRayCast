@@ -16,6 +16,8 @@ public:
 
 	double friction;
 	double gravity;
+	std::string sky_texture;
+	std::string ground_texture;
 
 	sf::Texture* load_texture(const std::string& texture);
 	const std::vector<Vertex>& load_model(const std::string& model);

@@ -2,5 +2,5 @@
 
 Player::Player() {
 	mass = 70;
-	radius = 50;
+	radius = 10;
 }

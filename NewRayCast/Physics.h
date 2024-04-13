@@ -23,5 +23,12 @@ public:
 	static double mag(sf::Vector2f vec);
 	static double direction(sf::Vector2f vec);
 	static sf::Vector2f project(sf::Vector2f source, sf::Vector2f target);
+	static double distance(sf::Vector2f a, sf::Vector2f b);
+
+	static double to_radians(double angle);
+	static double to_degrees(double angle);
+
+	static sf::Vector2f squash(sf::Vector3f input);
+	static sf::Vector2f mult(sf::Vector2f a, sf::Vector2f b);
 };
 
