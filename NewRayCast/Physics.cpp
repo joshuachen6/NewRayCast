@@ -1,19 +1,20 @@
 #include "Physics.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <memory>
 
 std::vector<CastResult> Physics::cast_ray(World& world, sf::Vector3f& source, double angle) {
 	std::vector<CastResult> hits;
 
-	for (Vertex* vertex : world.verticies) {
+	for (std::unique_ptr<Vertex>& vertex : world.verticies) {
 		sf::Vector2f hit;
 		if (hits_vertex(*vertex, hit, source, angle)) {
 			double distance = sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
-			hits.push_back(CastResult(sf::Vector2f(hit.x, hit.y), distance, vertex));
+			hits.push_back(CastResult(sf::Vector2f(hit.x, hit.y), distance, vertex.get()));
 		}
 	}
 
-	for (Entity* entity : world.entities) {
+	for (std::unique_ptr<Entity>& entity : world.entities) {
 		sf::Vector2f hit;
 		const std::vector<Vertex>& verticies = world.load_model(entity->model);
 		for (const Vertex& vertex : verticies) {
@@ -21,7 +22,7 @@ std::vector<CastResult> Physics::cast_ray(World& world, sf::Vector3f& source, do
 			Vertex* transformed = new Vertex(temp);
 			if (hits_vertex(*transformed, hit, source, angle)) {
 				double distance = sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
-				hits.push_back(CastResult(sf::Vector2f(hit.x, hit.y), distance, transformed, entity));
+				hits.push_back(CastResult(sf::Vector2f(hit.x, hit.y), distance, transformed, entity.get()));
 			}
 			else {
 				delete transformed;
@@ -84,7 +85,8 @@ bool Physics::hits_vertex(Vertex& vertex, sf::Vector2f& point, sf::Vector3f& sou
 }
 
 void Physics::apply_physics(World& world, double dt) {
-	for (Entity& entity : world.entities) {
+	for (std::unique_ptr<Entity>& entity_ptr : world.entities) {
+		Entity& entity = *entity_ptr;
 		entity.velocity += scale(entity.acceleration, dt);
 
 		sf::Vector2f friction = scale(normalize(entity.velocity), world.friction * entity.mass * world.gravity * dt);
@@ -94,20 +96,31 @@ void Physics::apply_physics(World& world, double dt) {
 			entity.velocity -= friction;
 		}
 
-		std::vector<CastResult> potential_hits;
-		while ((potential_hits = cast_ray(world, entity.location, direction(entity.velocity))).size()) {
+		std::vector<CastResult> potential_hits = cast_ray(world, entity.location, direction(entity.velocity));
+		if (potential_hits.size()) {
 			CastResult& result = potential_hits[0];
 			if (result.distance > mag(entity.velocity)) {
 				break;
 			}
-			if (result.entity) {
-				sf::Vector2f total_momentum = scale(entity.velocity, entity.mass) + scale(result.entity->velocity, result.entity->mass);
+			if (result.entity && (result.distance < entity.radius + result.entity->radius)) {
+				sf::Vector2f hit = project(entity.velocity, sf::Vector2f(entity.location.x - result.entity->location.x, entity.location.y - result.entity->location.y));
+				sf::Vector2f total_momentum = scale(hit, entity.mass) + scale(result.entity->velocity, result.entity->mass);
 				sf::Vector2f new_velocity = scale(total_momentum, 1 / (entity.mass + result.entity->mass));
-				entity.velocity = new_velocity;
+				entity.velocity += new_velocity - hit;
 				result.entity->velocity = new_velocity;
+				break;
 			}
-			sf::Vector2f wall_tangent = normalize(result.vertex->start - result.vertex->end);
-			entity.velocity = scale(normalize(entity.velocity), dot(wall_tangent, entity.velocity));
+			else {
+				sf::Vector2f wall_tangent = normalize(result.vertex->start - result.vertex->end);
+				sf::Vector2f wall_normal = sf::Vector2f(-wall_tangent.x, wall_tangent.y);
+				sf::Vector2f dist_vector = sf::Vector2f(result.point.x - entity.location.x, result.point.y - entity.location.y);
+
+				//entity.velocity = project(entity.velocity, wall_tangent);
+				//sf::Vector2f tangent_movement = project(entity.velocity, wall_normal);
+				//sf::Vector2f tangent_velocity = scale(normalize(tangent_movement), std::fmax(0, mag(dist_vector) - entity.radius));
+				//entity.location.x += tangent_velocity.x * dt;
+				//entity.location.y += tangent_velocity.y * dt;
+			}
 			/*
 			TODO:
 			
@@ -148,4 +161,8 @@ double Physics::mag(sf::Vector2f vec) {
 
 double Physics::direction(sf::Vector2f vec) {
 	return scale_angle(std::atan2(vec.x, vec.y));
+}
+
+sf::Vector2f Physics::project(sf::Vector2f source, sf::Vector2f target) {
+	return scale(normalize(target), dot(source, target) / mag(target));
 }

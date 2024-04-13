@@ -6,7 +6,6 @@
 #include <math.h>
 #include "Physics.h"
 #include "Player.h"
-#include <iostream>
 
 //Test class
 class DumbModel : public Entity {
@@ -14,6 +13,8 @@ public:
 	DumbModel() {
 		model = "C:\\Users\\JC200\\Downloads\\model.txt";
 		location = sf::Vector3f(100, 100, M_PI_2);
+		radius = 50;
+		mass = 10;
 	}
 };
 
@@ -25,13 +26,15 @@ int main() {
 
 	World world;
 	world.gravity = 10;
+	world.friction = 0.2;
 
-	Player& player = static_cast<Player&>(world.add_entity(Player()));
+	Player* player = new Player();
+	world.add_entity(player);
 
-	world.entities.push_back(DumbModel());
+	world.add_entity(new DumbModel());
 
-	world.verticies.push_back(Vertex(sf::Vector2f(1000, 1000), sf::Vector2f(1000, 900), 100, 0, "C:\\Users\\Joshua\\Downloads\\duck.jpg"));
-	world.verticies.push_back(Vertex(sf::Vector2f(-1000, 1000), sf::Vector2f(-1000, 900), 100, 0, "C:\\Users\\Joshua\\Downloads\\duck1.png"));
+	world.add_vertex(new Vertex(sf::Vector2f(1000, 1000), sf::Vector2f(1000, 900), 100, 0, "C:\\Users\\JC200\\Downloads\\rubber_duck.jpg"));
+	world.add_vertex(new Vertex(sf::Vector2f(-1000, 1000), sf::Vector2f(-1000, 900), 100, 0, "C:\\Users\\JC200\\Downloads\\rubber_duck1.jpg"));
 
 	std::chrono::time_point<std::chrono::system_clock> last = std::chrono::system_clock::now();
 
@@ -49,23 +52,22 @@ int main() {
 
 		// Movement
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-			player.location.z = Physics::scale_angle(player.location.z + (4 * M_PI / 7) * dt);
+			player->location.z = Physics::scale_angle(player->location.z + (4 * M_PI / 7) * dt);
 		}
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-			player.location.z = Physics::scale_angle(player.location.z - (4 * M_PI / 7) * dt);
+			player->location.z = Physics::scale_angle(player->location.z - (4 * M_PI / 7) * dt);
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-			player.velocity.x += cos(player.location.z) * 3 * METER * dt;
-			player.velocity.y += sin(player.location.z) * 3 * METER * dt;
+			player->velocity.x += cos(player->location.z) * 3 * METER * dt;
+			player->velocity.y += sin(player->location.z) * 3 * METER * dt;
 		}
 		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-			player.velocity.x -= cos(player.location.z) * 3 * METER * dt;
-			player.velocity.y -= sin(player.location.z) * 3 * METER * dt;
+			player->velocity.x -= cos(player->location.z) * 3 * METER * dt;
+			player->velocity.y -= sin(player->location.z) * 3 * METER * dt;
 		}
 
 		Physics::apply_physics(world, dt);
-		renderer.update(world, player, M_PI_2, 240);
-		std::cout << player.location.z << std::endl;
+		renderer.update(world, *player, M_PI_2, 240);
 	}
 }

@@ -10,5 +10,6 @@ public:
 	sf::Vector2f velocity;
 	sf::Vector2f acceleration;
 	double mass;
+	double radius;
 };
 

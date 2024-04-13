@@ -4,6 +4,7 @@
 #include <boost/range/irange.hpp>
 #include <boost/lockfree/queue.hpp>
 #include <memory>
+#include <format>
 
 sf::Sprite* Renderer::get_column(sf::Texture* texture, Vertex& vertex, sf::Vector2f& collision, int cols) {
 	sf::Sprite* sprite = new sf::Sprite(*texture); 
@@ -13,8 +14,13 @@ sf::Sprite* Renderer::get_column(sf::Texture* texture, Vertex& vertex, sf::Vecto
 	return sprite;
 }
 
+void Renderer::post() {
+
+}
+
 Renderer::Renderer(sf::RenderWindow& window) {
 	this->window = &window;
+	font.loadFromFile("resources\\font.ttf");
 }
 
 void Renderer::update(World& world, Player& camera, double fov, double rays) {
@@ -56,6 +62,25 @@ void Renderer::update(World& world, Player& camera, double fov, double rays) {
 		window->draw(*sprite);
 		delete sprite;
 	}
+
+	//move this later this is just for debug right now
+	sf::Text pos;
+	pos.setFont(font);
+	pos.setString(std::format("{}, {}, {}", int(camera.location.x), int(camera.location.y), int(camera.location.z)));
+	pos.setFillColor(sf::Color::White);
+	pos.setCharacterSize(32);
+	window->draw(pos);
+
+	sf::Text vel;
+	vel.setFont(font);
+	vel.setString(std::format("{}, {}", int(camera.velocity.x), int(camera.velocity.y)));
+	vel.setFillColor(sf::Color::Cyan);
+	vel.setCharacterSize(32);
+	vel.setPosition(0, 32);
+
+	window->draw(vel);
+
+	post();
 
 	window->display();
 }

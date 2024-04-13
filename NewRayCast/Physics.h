@@ -22,5 +22,6 @@ public:
 	static sf::Vector2f normalize(sf::Vector2f vec);
 	static double mag(sf::Vector2f vec);
 	static double direction(sf::Vector2f vec);
+	static sf::Vector2f project(sf::Vector2f source, sf::Vector2f target);
 };
 

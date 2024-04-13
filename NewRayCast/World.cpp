@@ -49,12 +49,10 @@ const std::vector<Vertex>& World::load_model(const std::string& model) {
 	return models[model];
 }
 
-Vertex& World::add_vertex(const Vertex& vertex) {
-	verticies.push_back(vertex);
-	return verticies.back();
+void World::add_vertex(Vertex* vertex) {
+	verticies.push_back(std::unique_ptr<Vertex>(vertex));
 }
 
-Entity& World::add_entity(const Entity& entity) {
-	entities.push_back(entity);
-	return entities.back();
+void World::add_entity(Entity* entity) {
+	entities.push_back(std::unique_ptr<Entity>(entity));
 }
