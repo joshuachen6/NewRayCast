@@ -66,3 +66,11 @@ void World::add_vertex(Vertex* vertex) {
 void World::add_entity(Entity* entity) {
 	entities.push_back(std::unique_ptr<Entity>(entity));
 }
+
+void World::spawn_model(std::string model, sf::Vector3f position) {
+	const std::vector<Vertex>& verticies = load_model(model);
+	for (const Vertex& vertex : verticies) {
+		Vertex temp = vertex.translated(position);
+		this->verticies.push_back(std::make_unique<Vertex>(temp));
+	}
+}

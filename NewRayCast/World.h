@@ -24,5 +24,6 @@ public:
 
 	void add_vertex(Vertex* vertex);
 	void add_entity(Entity* entity);
+	void spawn_model(std::string model, sf::Vector3f position);
 };
 

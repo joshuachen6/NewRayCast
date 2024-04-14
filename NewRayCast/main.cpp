@@ -11,9 +11,9 @@
 class DumbModel : public Entity {
 public:
 	DumbModel() {
-		model = "C:\\Users\\JC200\\Downloads\\model.txt";
-		location = sf::Vector3f(100, 100, M_PI_2);
-		radius = 15;
+		model = R"(resources\models\day_tree.txt)";
+		location = sf::Vector3f(-100, 100, M_PI_2);
+		radius = 50;
 		mass = 10;
 	}
 };
@@ -41,17 +41,9 @@ int main() {
 
 	world.add_entity(new DumbModel());
 
-	world.add_vertex(new Vertex(sf::Vector2f(0, 0), sf::Vector2f(100, 0), 200, 0, "resources\\sprites\\night_tree.png"));
-
-	world.add_vertex(new Vertex(sf::Vector2f(1000, 1000) + sf::Vector2f(-100, -100), sf::Vector2f(1000, 900) + sf::Vector2f(-100, -100), 200, 0, "resources\\sprites\\night_tree.png"));
-	world.add_vertex(new Vertex(sf::Vector2f(950, 950) + sf::Vector2f(-100, -100), sf::Vector2f(1050, 950) + sf::Vector2f(-100, -100), 200, 0, "resources\\sprites\\night_tree.png"));
-
-	world.add_vertex(new Vertex(sf::Vector2f(1000, 1000), sf::Vector2f(1000, 900), 200, 0, "resources\\sprites\\night_tree.png"));
-	world.add_vertex(new Vertex(sf::Vector2f(950, 950), sf::Vector2f(1050, 950), 200, 0, "resources\\sprites\\night_tree.png"));
-
-
-	world.add_vertex(new Vertex(sf::Vector2f(1000, 1000) + sf::Vector2f(100, 100), sf::Vector2f(1000, 900) + sf::Vector2f(100, 100), 200, 0, "resources\\sprites\\night_tree.png"));
-	world.add_vertex(new Vertex(sf::Vector2f(950, 950) + sf::Vector2f(100, 100), sf::Vector2f(1050, 950) + sf::Vector2f(100, 100), 200, 0, "resources\\sprites\\night_tree.png"));
+	world.spawn_model(R"(resources\models\night_tree.txt)", sf::Vector3f(100, -100, 0));
+	world.spawn_model(R"(resources\models\night_tree.txt)", sf::Vector3f(100, 0, 0));
+	world.spawn_model(R"(resources\models\night_tree.txt)", sf::Vector3f(100, 100, 0));
 
 	std::chrono::time_point<std::chrono::system_clock> last = std::chrono::system_clock::now();
 

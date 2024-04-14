@@ -1,0 +1,4 @@
+-50,0;50,0;200;0;resources/sprites/tree.png
+0,-50;0,50;200;0;resources/sprites/tree.png
+-35.35,-35.35;35.35,35.35;200;0;resources/sprites/tree.png
+-35.35,35.35;35.35,-35.35;200;0;resources/sprites/tree.png

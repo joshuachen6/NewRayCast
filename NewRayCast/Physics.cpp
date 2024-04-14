@@ -120,37 +120,28 @@ void Physics::apply_physics(World& world, double dt) {
 			if (result.distance > mag(entity.velocity)) {
 				break;
 			}
-			if (result.entity && (result.distance < entity.radius + result.entity->radius)) {
-				sf::Vector2f hit = project(entity.velocity, sf::Vector2f(entity.location.x - result.entity->location.x, entity.location.y - result.entity->location.y));
-				sf::Vector2f total_momentum = scale(hit, entity.mass) + scale(result.entity->velocity, result.entity->mass);
-				sf::Vector2f new_velocity = scale(total_momentum, 1 / (entity.mass + result.entity->mass));
-				entity.velocity += new_velocity - hit;
-				result.entity->velocity = new_velocity;
-				break;
-			}
-			else {
-				sf::Vector2f wall_tangent = normalize(result.vertex->start - result.vertex->end);
-				sf::Vector2f wall_normal = sf::Vector2f(-wall_tangent.y, wall_tangent.x);
-				sf::Vector2f dist_vector = sf::Vector2f(result.point.x - entity.location.x, result.point.y - entity.location.y);
-				sf::Vector2f projected_dist_vector = project(dist_vector, wall_normal);
-				sf::Vector2f scaled_dist_vector = scale(normalize(projected_dist_vector), std::fmax(0, mag(projected_dist_vector) - entity.radius));
+			
+			sf::Vector2f wall_tangent = normalize(result.vertex->start - result.vertex->end);
+			sf::Vector2f wall_normal = sf::Vector2f(-wall_tangent.y, wall_tangent.x);
+			sf::Vector2f dist_vector = sf::Vector2f(result.point.x - entity.location.x, result.point.y - entity.location.y);
+			sf::Vector2f projected_dist_vector = project(dist_vector, wall_normal);
+			sf::Vector2f scaled_dist_vector = scale(normalize(projected_dist_vector), std::fmax(0, mag(projected_dist_vector) - entity.radius));
 
-				sf::Vector2f tangent_velocity = project(entity.velocity, wall_tangent);
-				sf::Vector2f normal_velocity = project(entity.velocity, wall_normal);
+			sf::Vector2f tangent_velocity = project(entity.velocity, wall_tangent);
+			sf::Vector2f normal_velocity = project(entity.velocity, wall_normal);
 
-				double normal_distance = mag(scaled_dist_vector);
+			double normal_distance = mag(scaled_dist_vector);
 				
-				if (mag(scale(normal_velocity, dt)) >= normal_distance) {
-					if (entity.radius >= normal_distance) {
-						scaled_dist_vector = scale(normalize(projected_dist_vector), mag(projected_dist_vector) - entity.radius);
-					}
-					entity.location.x += scaled_dist_vector.x;
-					entity.location.y += scaled_dist_vector.y;
-					normal_velocity = sf::Vector2f(0, 0);
+			if (mag(scale(normal_velocity, dt)) >= normal_distance) {
+				if (entity.radius >= normal_distance) {
+					scaled_dist_vector = scale(normalize(projected_dist_vector), mag(projected_dist_vector) - entity.radius);
 				}
-				
-				entity.velocity = tangent_velocity + normal_velocity;
+				entity.location.x += scaled_dist_vector.x;
+				entity.location.y += scaled_dist_vector.y;
+				normal_velocity = sf::Vector2f(0, 0);
 			}
+				
+			entity.velocity = tangent_velocity + normal_velocity;
 			whitelist.insert(result.vertex);
 		}
 		entity.location = sf::Vector3f(entity.location.x + entity.velocity.x * dt, entity.location.y + entity.velocity.y * dt, entity.location.z);
