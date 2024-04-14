@@ -14,20 +14,17 @@ sf::Sprite* Renderer::get_column(sf::Texture* texture, Vertex& vertex, sf::Vecto
 	return sprite;
 }
 
-void Renderer::post() {
-
-}
-
 void Renderer::draw_minimap(World& world, Player& camera) {
 	//the range of the minimap:
 	double range = 5 * METER;
-	double on_screen_radius = 100;
+	double on_screen_radius = window->getSize().y/6;
+	double padding = on_screen_radius / 5;
 	double scale = on_screen_radius / range;
-	sf::Vector2f center(window->getSize().x - on_screen_radius - 15, on_screen_radius + 15);
+	sf::Vector2f center(window->getSize().x - on_screen_radius - padding, on_screen_radius + padding);
 
 	sf::CircleShape dish(on_screen_radius);
 	dish.setOutlineColor(sf::Color::White);
-	dish.setOutlineThickness(1);
+	dish.setOutlineThickness(on_screen_radius / 100);
 	dish.setFillColor(sf::Color::Black);
 	dish.setPosition(center - sf::Vector2f(on_screen_radius, on_screen_radius));
 	window->draw(dish);
@@ -40,7 +37,7 @@ void Renderer::draw_minimap(World& world, Player& camera) {
 				sf::Vertex(Physics::mult(Physics::scale(vertex->end - pos, scale), sf::Vector2f(1, -1)) + center)
 			};
 
-			window->draw(line, 2, sf::Lines);
+			window->draw(line, on_screen_radius/50, sf::Lines);
 		}
 	}
 
@@ -81,25 +78,27 @@ sf::Text Renderer::text_of(std::string text) {
 
 Renderer::Renderer(sf::RenderWindow& window) {
 	this->window = &window;
+	render_texture.create(window.getSize().x, window.getSize().y);
 	font.loadFromFile("resources\\font.ttf");
+	noise_shader.loadFromFile("resources\\noise.glsl", sf::Shader::Fragment);
 	debug = false;
 }
 
-void Renderer::update(World& world, Player& camera, double fov, double rays) {
-	window->clear();
+void Renderer::update(World& world, Player& camera, double fov, double rays, double dt) {
+	render_texture.clear();
 
 	sf::Sprite sky;
 	sky.setTexture(*world.load_texture(world.sky_texture));
-	sky.setScale(double(window->getSize().x) / sky.getTexture()->getSize().x, (window->getSize().y / 2.0)/sky.getTexture()->getSize().y);
-	window->draw(sky);
+	sky.setScale(double(render_texture.getSize().x) / sky.getTexture()->getSize().x, (render_texture.getSize().y / 2.0)/sky.getTexture()->getSize().y);
+	render_texture.draw(sky);
 	sf::Sprite ground;
 	ground.setTexture(*world.load_texture(world.ground_texture));
-	ground.setScale(double(window->getSize().x) / ground.getTexture()->getSize().x, (window->getSize().y / 2.0) / ground.getTexture()->getSize().y);
-	ground.setPosition(0, window->getSize().y / 2);
-	window->draw(ground);
+	ground.setScale(double(render_texture.getSize().x) / ground.getTexture()->getSize().x, (render_texture.getSize().y / 2.0) / ground.getTexture()->getSize().y);
+	ground.setPosition(0, render_texture.getSize().y / 2);
+	render_texture.draw(ground);
 
 	double offset = fov / rays;
-	double xoffset = window->getSize().x / rays;
+	double xoffset = render_texture.getSize().x / rays;
 	boost::integer_range<int> ops = boost::irange<int>((int) ( - rays / 2), (int) (rays / 2));
 	boost::lockfree::queue<sf::Sprite*> sprite_queue(0);
 
@@ -118,11 +117,11 @@ void Renderer::update(World& world, Player& camera, double fov, double rays) {
 					if (texture) {
 						sf::Sprite* sprite = get_column(texture, *closest.vertex, closest.point, std::ceil(xoffset));
 						double trueDistance = closest.distance * cos(offset * i);
-						double vScale = (closest.vertex->height / trueDistance) * (((double)window->getSize().y) / sprite->getTextureRect().height);
-						double height = window->getSize().y / 2 - sprite->getTextureRect().height / 2 * vScale;
-						double dist = (METER - closest.vertex->height - closest.vertex->z) / (2 * trueDistance) * window->getSize().y;
+						double vScale = (closest.vertex->height / trueDistance) * (((double)render_texture.getSize().y) / sprite->getTextureRect().height);
+						double height = render_texture.getSize().y / 2 - sprite->getTextureRect().height / 2 * vScale;
+						double dist = (METER - closest.vertex->height - closest.vertex->z) / (2 * trueDistance) * render_texture.getSize().y;
 						sprite->setScale(1, vScale);
-						sprite->setPosition(sf::Vector2f(-i * xoffset + window->getSize().x / 2 - sprite->getTextureRect().width / 2, height + dist));
+						sprite->setPosition(sf::Vector2f(-i * xoffset + render_texture.getSize().x / 2 - sprite->getTextureRect().width / 2, height + dist));
 						sprite_queue.push(sprite);
 					}
 				}
@@ -132,14 +131,26 @@ void Renderer::update(World& world, Player& camera, double fov, double rays) {
 	while (!sprite_queue.empty()) {
 		sf::Sprite* sprite;
 		sprite_queue.pop(sprite);
-		window->draw(*sprite);
+		render_texture.draw(*sprite);
 		delete sprite;
 	}
 
-	//postprocessing effects
-	post();
-
 	//move this later this is just for debug right now
+
+	render_texture.display();
+	noise_shader.setUniform("time", float(dt));
+	noise_shader.setUniform("scale", 0.1f);
+	noise_shader.setUniform("resolution", sf::Vector2f(window->getSize().x, window->getSize().y));
+
+	window->clear();
+	sf::Sprite scene;
+	scene.setTexture(render_texture.getTexture());
+	scene.setScale(double(window->getSize().x)/scene.getTexture()->getSize().x, double(window->getSize().y)/scene.getTexture()->getSize().y);
+	window->draw(scene, &noise_shader);
+
+	//draw hud here so its not noised
+	draw_minimap(world, camera);
+
 	if (debug) {
 		sf::Text title = text_of("Camera Debug");
 		title.setFillColor(sf::Color::White);
@@ -166,8 +177,6 @@ void Renderer::update(World& world, Player& camera, double fov, double rays) {
 		yaw.setPosition(0, 56);
 		window->draw(yaw);
 	}
-
-	draw_minimap(world, camera);
 
 	window->display();
 }

@@ -10,11 +10,10 @@
 class Renderer {
 private:
 	sf::RenderWindow* window;
+	sf::RenderTexture render_texture;
 	sf::Sprite* get_column(sf::Texture* texture, Vertex& vertex, sf::Vector2f& collision, int cols);
 	sf::Font font;
-
-	//postprocessing effects I may add later
-	void post();
+	sf::Shader noise_shader;
 
 	void draw_minimap(World& world, Player& player);
 
@@ -23,5 +22,5 @@ private:
 public:
 	bool debug;
 	Renderer(sf::RenderWindow& window);
-	void update(World& world, Player& camera, double fov, double rays);
+	void update(World& world, Player& camera, double fov, double rays, double dt);
 };

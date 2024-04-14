@@ -2,6 +2,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <memory>
+#include <unordered_set>
 
 std::vector<CastResult> Physics::cast_ray(World& world, sf::Vector3f& source, double angle) {
 	std::vector<CastResult> hits;
@@ -96,9 +97,26 @@ void Physics::apply_physics(World& world, double dt) {
 			entity.velocity -= friction;
 		}
 
-		std::vector<CastResult> potential_hits = cast_ray(world, entity.location, direction(entity.velocity));
-		if (potential_hits.size()) {
+		std::vector<CastResult> potential_hits;
+		std::unordered_set<Vertex*> whitelist;
+
+		while ((potential_hits = cast_ray(world, entity.location, direction(entity.velocity))).size()) {
+			bool valid = true;
 			CastResult& result = potential_hits[0];
+			int i = 0;
+			while (whitelist.contains(result.vertex)) {
+				i++;
+				if (i >= potential_hits.size()) {
+					valid = false;
+					break;
+				}
+				result = potential_hits[i];
+			}
+
+			if (!valid) {
+				break;
+			}
+
 			if (result.distance > mag(entity.velocity)) {
 				break;
 			}
@@ -115,25 +133,12 @@ void Physics::apply_physics(World& world, double dt) {
 				sf::Vector2f wall_normal = sf::Vector2f(-wall_tangent.x, wall_tangent.y);
 				sf::Vector2f dist_vector = sf::Vector2f(result.point.x - entity.location.x, result.point.y - entity.location.y);
 
-				entity.velocity = project(entity.velocity, wall_tangent);
-				sf::Vector2f tangent_movement = project(entity.velocity, wall_normal);
-				sf::Vector2f tangent_velocity = scale(normalize(tangent_movement), std::fmax(0, mag(dist_vector) - entity.radius));
-				entity.location.x += tangent_velocity.x * dt;
-				entity.location.y += tangent_velocity.y * dt;
+				sf::Vector2f tangent_velocity = project(entity.velocity, wall_tangent);
+				sf::Vector2f normal_velocity = scale(normalize(wall_normal), mag(project(dist_vector, wall_normal))-entity.radius);
+				
+				entity.velocity = tangent_velocity + normal_velocity;
 			}
-			/*
-			TODO:
-			
-			Issue:
-			There is a pretty significant issue with this code here, it essentially means that you can only move "along" the wall.
-			This means that there is no way to "approach" the wall as your movement will always be defected along the wall.
-			
-			Solution:
-			The solution is to also include the normal component of the wall. This way you can both go towards the wall and along the wall.
-			First limit the component that is normal with the wall so that you can only go a certain amount towards the wall.
-			Then add the tangential component.
-			*/
-
+			whitelist.insert(result.vertex);
 		}
 		entity.location = sf::Vector3f(entity.location.x + entity.velocity.x * dt, entity.location.y + entity.velocity.y * dt, entity.location.z);
 	}
@@ -160,7 +165,7 @@ double Physics::mag(sf::Vector2f vec) {
 }
 
 double Physics::direction(sf::Vector2f vec) {
-	return scale_angle(std::atan2(vec.x, vec.y));
+	return scale_angle(std::atan2(vec.y, vec.x));
 }
 
 sf::Vector2f Physics::project(sf::Vector2f source, sf::Vector2f target) {
