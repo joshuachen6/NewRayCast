@@ -130,11 +130,24 @@ void Physics::apply_physics(World& world, double dt) {
 			}
 			else {
 				sf::Vector2f wall_tangent = normalize(result.vertex->start - result.vertex->end);
-				sf::Vector2f wall_normal = sf::Vector2f(-wall_tangent.x, wall_tangent.y);
+				sf::Vector2f wall_normal = sf::Vector2f(-wall_tangent.y, wall_tangent.x);
 				sf::Vector2f dist_vector = sf::Vector2f(result.point.x - entity.location.x, result.point.y - entity.location.y);
+				sf::Vector2f projected_dist_vector = project(dist_vector, wall_normal);
+				sf::Vector2f scaled_dist_vector = scale(normalize(projected_dist_vector), std::fmax(0, mag(projected_dist_vector) - entity.radius));
 
 				sf::Vector2f tangent_velocity = project(entity.velocity, wall_tangent);
-				sf::Vector2f normal_velocity = scale(normalize(wall_normal), mag(project(dist_vector, wall_normal))-entity.radius);
+				sf::Vector2f normal_velocity = project(entity.velocity, wall_normal);
+
+				double normal_distance = mag(scaled_dist_vector);
+				
+				if (mag(scale(normal_velocity, dt)) >= normal_distance) {
+					if (entity.radius >= normal_distance) {
+						scaled_dist_vector = scale(normalize(projected_dist_vector), mag(projected_dist_vector) - entity.radius);
+					}
+					entity.location.x += scaled_dist_vector.x;
+					entity.location.y += scaled_dist_vector.y;
+					normal_velocity = sf::Vector2f(0, 0);
+				}
 				
 				entity.velocity = tangent_velocity + normal_velocity;
 			}
@@ -169,7 +182,11 @@ double Physics::direction(sf::Vector2f vec) {
 }
 
 sf::Vector2f Physics::project(sf::Vector2f source, sf::Vector2f target) {
-	return scale(normalize(target), dot(source, target) / mag(target));
+	double target_mag = mag(target);
+	if (target_mag == 0) {
+		return sf::Vector2f(0, 0);
+	}
+	return scale(normalize(target), dot(source, target) / target_mag);
 }
 
 double Physics::distance(sf::Vector2f a, sf::Vector2f b) {
