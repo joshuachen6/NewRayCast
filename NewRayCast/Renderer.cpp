@@ -53,13 +53,16 @@ void Renderer::draw_minimap(World& world, Player& camera) {
 	}
 
 	if (debug) {
-		sf::Vertex vel[] = {
-				sf::Vertex(center),
-				sf::Vertex(Physics::ham(Physics::scale(camera.velocity, scale), sf::Vector2f(1, -1)) + center)
-		};
-		vel[0].color = sf::Color::Cyan;
-		vel[1].color = sf::Color::Green;
-		window->draw(vel, 2, sf::Lines);
+		for (const std::unique_ptr<Entity>& entity : world.entities) {
+			sf::Vector2f entity_center = Physics::ham(Physics::scale(Physics::squash(entity->location) - pos, scale), sf::Vector2f(1, -1)) + center;
+			sf::Vertex vel[] = {
+					sf::Vertex(entity_center),
+					sf::Vertex(entity_center + Physics::ham(Physics::scale(entity->velocity, scale), sf::Vector2f(1, -1)))
+			};
+			vel[0].color = sf::Color::Cyan;
+			vel[1].color = sf::Color::Green;
+			window->draw(vel, 2, sf::Lines);
+		}
 	}
 
 	sf::Vector2f offset;

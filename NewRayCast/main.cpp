@@ -12,7 +12,7 @@ class DumbModel : public Entity {
 public:
 	DumbModel() {
 		model = R"(resources\models\day_tree.txt)";
-		location = sf::Vector3f(-100, 100, M_PI_2);
+		location = sf::Vector3f(100, 0, M_PI_2);
 		radius = 50;
 		mass = 10;
 	}
@@ -42,8 +42,8 @@ int main() {
 	world.add_entity(new DumbModel());
 
 	//test spawn some trees
-	for (int i = 0; i < 20; i++) {
-		for (int j = 0; j < 20; j++) {
+	for (int i = 0; i < 5; i++) {
+		for (int j = 0; j < 5; j++) {
 			world.spawn_model(R"(resources\models\night_tree.txt)", sf::Vector3f(250+i*150, j*150, 0));
 		}
 	}

@@ -86,8 +86,8 @@ bool Physics::hits_vertex(Vertex& vertex, sf::Vector2f& point, sf::Vector3f& sou
 }
 
 void Physics::apply_physics(World& world, double dt) {
-	for (std::unique_ptr<Entity>& entity_ptr : world.entities) {
-		Entity& entity = *entity_ptr;
+	for (int entity_index = 0; entity_index < world.entities.size(); entity_index++) {
+		Entity& entity = *world.entities[entity_index];
 		entity.velocity += scale(entity.acceleration, dt);
 
 		sf::Vector2f friction = scale(normalize(entity.velocity), world.friction * entity.mass * world.gravity * dt);
@@ -95,6 +95,31 @@ void Physics::apply_physics(World& world, double dt) {
 			entity.velocity = sf::Vector2f();
 		} else {
 			entity.velocity -= friction;
+		}
+
+		//momentum
+		for (int other_index = entity_index + 1; other_index < world.entities.size(); other_index++) {
+			Entity& other = *world.entities[other_index];
+			sf::Vector2f distance_vector = squash(other.location) - squash(entity.location);
+			double distance = mag(distance_vector);
+			if (distance < entity.radius + other.radius && dot(distance_vector, entity.velocity) > 0) {
+				sf::Vector2f normalized_dist = normalize(distance_vector);
+
+				sf::Vector2f entity_normal = project(entity.velocity, normalized_dist);
+				sf::Vector2f other_normal = project(other.velocity, normalized_dist);
+				double new_velocity = (mag(entity_normal) * entity.mass + mag(other_normal) * other.mass) / (entity.mass + other.mass);
+				sf::Vector2f new_normal = scale(normalize(distance_vector), new_velocity);
+
+				entity.velocity -= entity_normal;
+				other.velocity -= other_normal;
+
+				entity.velocity += new_normal;
+				other.velocity += new_normal;
+
+				sf::Vector2f offset = scale(normalized_dist, distance - (entity.radius + other.radius));
+				entity.location.x += offset.x;
+				entity.location.y += offset.y;
+			}
 		}
 
 		std::vector<CastResult> potential_hits;
@@ -107,7 +132,7 @@ void Physics::apply_physics(World& world, double dt) {
 			bool valid = true;
 			CastResult& result = potential_hits[0];
 			int i = 0;
-			while (whitelist.contains(result.vertex)) {
+			while (whitelist.contains(result.vertex) || result.entity) {
 				i++;
 				if (i >= potential_hits.size()) {
 					valid = false;
