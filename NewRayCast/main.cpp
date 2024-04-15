@@ -41,9 +41,12 @@ int main() {
 
 	world.add_entity(new DumbModel());
 
-	world.spawn_model(R"(resources\models\night_tree.txt)", sf::Vector3f(100, -100, 0));
-	world.spawn_model(R"(resources\models\night_tree.txt)", sf::Vector3f(100, 0, 0));
-	world.spawn_model(R"(resources\models\night_tree.txt)", sf::Vector3f(100, 100, 0));
+	//test spawn some trees
+	for (int i = 0; i < 20; i++) {
+		for (int j = 0; j < 20; j++) {
+			world.spawn_model(R"(resources\models\night_tree.txt)", sf::Vector3f(250+i*150, j*150, 0));
+		}
+	}
 
 	std::chrono::time_point<std::chrono::system_clock> last = std::chrono::system_clock::now();
 

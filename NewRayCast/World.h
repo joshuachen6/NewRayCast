@@ -11,7 +11,7 @@ private:
 	std::unordered_map<std::string, sf::Texture> textures;
 	std::unordered_map<std::string, std::vector<Vertex>> models;
 public:
-	std::vector<std::unique_ptr<Vertex>> verticies; //Also this is spelled wrong
+	std::vector<std::unique_ptr<Vertex>> vertices;
 	std::vector<std::unique_ptr<Entity>> entities;
 
 	double friction;

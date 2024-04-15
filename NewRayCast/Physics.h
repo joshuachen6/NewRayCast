@@ -7,7 +7,7 @@
 #include "CastResult.h"
 #include <unordered_map>
 
-const int METER = 100;
+const double METER = 100;
 
 
 class Physics {
@@ -29,6 +29,6 @@ public:
 	static double to_degrees(double angle);
 
 	static sf::Vector2f squash(sf::Vector3f input);
-	static sf::Vector2f mult(sf::Vector2f a, sf::Vector2f b);
+	static sf::Vector2f ham(sf::Vector2f a, sf::Vector2f b);
 };
 

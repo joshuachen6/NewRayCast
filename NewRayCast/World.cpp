@@ -60,7 +60,7 @@ const std::vector<Vertex>& World::load_model(const std::string& model) {
 }
 
 void World::add_vertex(Vertex* vertex) {
-	verticies.push_back(std::unique_ptr<Vertex>(vertex));
+	vertices.push_back(std::unique_ptr<Vertex>(vertex));
 }
 
 void World::add_entity(Entity* entity) {
@@ -68,9 +68,9 @@ void World::add_entity(Entity* entity) {
 }
 
 void World::spawn_model(std::string model, sf::Vector3f position) {
-	const std::vector<Vertex>& verticies = load_model(model);
-	for (const Vertex& vertex : verticies) {
+	const std::vector<Vertex>& vertices = load_model(model);
+	for (const Vertex& vertex : vertices) {
 		Vertex temp = vertex.translated(position);
-		this->verticies.push_back(std::make_unique<Vertex>(temp));
+		this->vertices.push_back(std::make_unique<Vertex>(temp));
 	}
 }

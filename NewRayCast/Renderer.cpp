@@ -16,10 +16,10 @@ sf::Sprite* Renderer::get_column(sf::Texture* texture, Vertex& vertex, sf::Vecto
 
 void Renderer::draw_minimap(World& world, Player& camera) {
 	//the range of the minimap:
-	double range = 5 * METER;
+	double range = 3.5 * METER;
 	double on_screen_radius = window->getSize().y/6;
 	double padding = on_screen_radius / 5;
-	double scale = on_screen_radius / range;
+	double scale = on_screen_radius / range * 0.8;
 	sf::Vector2f center(window->getSize().x - on_screen_radius - padding, on_screen_radius + padding);
 
 	sf::CircleShape dish(on_screen_radius);
@@ -30,11 +30,11 @@ void Renderer::draw_minimap(World& world, Player& camera) {
 	window->draw(dish);
 
 	sf::Vector2f pos = Physics::squash(camera.location);
-	for (const std::unique_ptr<Vertex>& vertex : world.verticies) {
+	for (const std::unique_ptr<Vertex>& vertex : world.vertices) {
 		if (Physics::distance(pos, vertex->start) < range && Physics::distance(pos, vertex->start) < range) {
 			sf::Vertex line[] = {
-				sf::Vertex(Physics::mult(Physics::scale(vertex->start - pos, scale), sf::Vector2f(1, -1)) + center),
-				sf::Vertex(Physics::mult(Physics::scale(vertex->end - pos, scale), sf::Vector2f(1, -1)) + center)
+				sf::Vertex(Physics::ham(Physics::scale(vertex->start - pos, scale), sf::Vector2f(1, -1)) + center),
+				sf::Vertex(Physics::ham(Physics::scale(vertex->end - pos, scale), sf::Vector2f(1, -1)) + center)
 			};
 
 			window->draw(line, on_screen_radius/50, sf::Lines);
@@ -43,11 +43,11 @@ void Renderer::draw_minimap(World& world, Player& camera) {
 
 	for (const std::unique_ptr<Entity>& entity : world.entities) {
 		sf::Vector2f entity_pos = Physics::squash(entity->location);
-		if (Physics::distance(pos, entity_pos) < range) {
+		if (Physics::distance(pos, entity_pos) + entity->radius < range) {
 			double raidus = entity->radius * scale;
 			sf::CircleShape indicator(raidus);
 			indicator.setFillColor(sf::Color::Red);
-			indicator.setPosition(Physics::mult(Physics::scale(entity_pos - pos, scale), sf::Vector2f(1, -1)) + center - sf::Vector2f(raidus, raidus));
+			indicator.setPosition(Physics::ham(Physics::scale(entity_pos - pos, scale), sf::Vector2f(1, -1)) + center - sf::Vector2f(raidus, raidus));
 			window->draw(indicator);
 		}
 	}
@@ -55,18 +55,22 @@ void Renderer::draw_minimap(World& world, Player& camera) {
 	if (debug) {
 		sf::Vertex vel[] = {
 				sf::Vertex(center),
-				sf::Vertex(Physics::mult(Physics::scale(camera.velocity, scale), sf::Vector2f(1, -1)) + center)
+				sf::Vertex(Physics::ham(Physics::scale(camera.velocity, scale), sf::Vector2f(1, -1)) + center)
 		};
 		vel[0].color = sf::Color::Cyan;
 		vel[1].color = sf::Color::Green;
 		window->draw(vel, 2, sf::Lines);
 	}
 
-	double raidus = camera.radius * scale;
-	sf::CircleShape cursor(raidus);
-	cursor.setFillColor(sf::Color::Blue);
-	cursor.setPosition(center - sf::Vector2f(raidus, raidus));
-	window->draw(cursor);
+	sf::Vector2f offset;
+	for (int i = 0; i < 4; i++) {
+		double radius = camera.radius * scale * 1/(i+1);
+		sf::CircleShape cursor(radius);
+		cursor.setFillColor(sf::Color::Blue);
+		cursor.setPosition(center - sf::Vector2f(radius, radius) + offset);
+		window->draw(cursor);
+		offset += sf::Vector2f(radius * std::cos(camera.location.z), -radius * std::sin(camera.location.z));
+	}
 }
 
 sf::Text Renderer::text_of(std::string text) {
@@ -122,6 +126,13 @@ void Renderer::update(World& world, Player& camera, double fov, double rays, dou
 						double dist = (METER - closest.vertex->height - closest.vertex->z) / (2 * trueDistance) * render_texture.getSize().y;
 						sprite->setScale(1, vScale);
 						sprite->setPosition(sf::Vector2f(-i * xoffset + render_texture.getSize().x / 2 - sprite->getTextureRect().width / 2, height + dist));
+
+						//make sprites darker to create fog effect
+						if (closest.distance > 0) {
+							double darkness = std::fmax(1, std::sqrt(closest.distance / METER));
+							sprite->setColor(sf::Color(255 / darkness, 255 / darkness, 255 / darkness, 255 / darkness));
+						}
+
 						sprite_queue.push(sprite);
 					}
 				}
@@ -134,8 +145,6 @@ void Renderer::update(World& world, Player& camera, double fov, double rays, dou
 		render_texture.draw(*sprite);
 		delete sprite;
 	}
-
-	//move this later this is just for debug right now
 
 	render_texture.display();
 	noise_shader.setUniform("time", float(dt));
@@ -170,12 +179,17 @@ void Renderer::update(World& world, Player& camera, double fov, double rays, dou
 		vel.setPosition(0, 40);
 		window->draw(vel);
 
-
 		sf::Text yaw = text_of(std::format("Yaw {}", int(Physics::to_degrees(camera.location.z))));
 		yaw.setFillColor(sf::Color::Green);
 		yaw.setCharacterSize(16);
 		yaw.setPosition(0, 56);
 		window->draw(yaw);
+
+		sf::Text fps = text_of(std::format("FPS {}", int(1/dt)));
+		fps.setFillColor(sf::Color::White);
+		fps.setCharacterSize(32);
+		fps.setPosition(0, 88);
+		window->draw(fps);
 	}
 
 	window->display();

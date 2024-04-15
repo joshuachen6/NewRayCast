@@ -7,7 +7,7 @@
 std::vector<CastResult> Physics::cast_ray(World& world, sf::Vector3f& source, double angle) {
 	std::vector<CastResult> hits;
 
-	for (std::unique_ptr<Vertex>& vertex : world.verticies) {
+	for (std::unique_ptr<Vertex>& vertex : world.vertices) {
 		sf::Vector2f hit;
 		if (hits_vertex(*vertex, hit, source, angle)) {
 			double distance = sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
@@ -17,8 +17,8 @@ std::vector<CastResult> Physics::cast_ray(World& world, sf::Vector3f& source, do
 
 	for (std::unique_ptr<Entity>& entity : world.entities) {
 		sf::Vector2f hit;
-		const std::vector<Vertex>& verticies = world.load_model(entity->model);
-		for (const Vertex& vertex : verticies) {
+		const std::vector<Vertex>& vertices = world.load_model(entity->model);
+		for (const Vertex& vertex : vertices) {
 			Vertex temp = vertex.translated(entity->location);
 			Vertex* transformed = new Vertex(temp);
 			if (hits_vertex(*transformed, hit, source, angle)) {
@@ -100,7 +100,10 @@ void Physics::apply_physics(World& world, double dt) {
 		std::vector<CastResult> potential_hits;
 		std::unordered_set<Vertex*> whitelist;
 
-		while ((potential_hits = cast_ray(world, entity.location, direction(entity.velocity))).size()) {
+		double dir = direction(entity.velocity);
+		sf::Vector3f source(entity.location.x, entity.location.y, dir);
+
+		while ((potential_hits = cast_ray(world, source, dir)).size()) {
 			bool valid = true;
 			CastResult& result = potential_hits[0];
 			int i = 0;
@@ -145,6 +148,9 @@ void Physics::apply_physics(World& world, double dt) {
 			whitelist.insert(result.vertex);
 		}
 		entity.location = sf::Vector3f(entity.location.x + entity.velocity.x * dt, entity.location.y + entity.velocity.y * dt, entity.location.z);
+
+		dir = direction(entity.velocity);
+		source = sf::Vector3f(entity.location.x, entity.location.y, dir);
 	}
 }
 
@@ -169,7 +175,7 @@ double Physics::mag(sf::Vector2f vec) {
 }
 
 double Physics::direction(sf::Vector2f vec) {
-	return scale_angle(std::atan2(vec.y, vec.x));
+	return std::atan2(vec.y, vec.x);
 }
 
 sf::Vector2f Physics::project(sf::Vector2f source, sf::Vector2f target) {
@@ -196,6 +202,6 @@ sf::Vector2f Physics::squash(sf::Vector3f input) {
 	return sf::Vector2f(input.x, input.y);
 }
 
-sf::Vector2f Physics::mult(sf::Vector2f a, sf::Vector2f b) {
+sf::Vector2f Physics::ham(sf::Vector2f a, sf::Vector2f b) {
 	return sf::Vector2f(a.x * b.x, a.y * b.y);
 }
