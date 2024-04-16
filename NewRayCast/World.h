@@ -28,5 +28,7 @@ public:
 
 	void spawn_model(std::string model, sf::Vector3f position);
 	void spawn_entity(std::string entity, sf::Vector3f position);
+
+	void clear_cache();
 };
 

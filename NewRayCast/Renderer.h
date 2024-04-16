@@ -21,6 +21,7 @@ private:
 
 public:
 	bool debug;
+	bool show_minimap;
 	Renderer(sf::RenderWindow& window);
 	void update(World& world, Player& camera, double fov, double rays, double dt);
 };

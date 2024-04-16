@@ -44,7 +44,7 @@ int main() {
 	//test spawn some trees
 	for (int i = 0; i < 5; i++) {
 		for (int j = 0; j < 5; j++) {
-			world.spawn_model(R"(resources\models\night_tree.txt)", sf::Vector3f(250+i*150, j*150, 0));
+			world.spawn_model(R"(resources\models\night_tree.txt)", sf::Vector3f(250 + i * 150, j * 150, 0));
 		}
 	}
 
@@ -64,12 +64,16 @@ int main() {
 			} else if (event.type == sf::Event::GainedFocus) {
 				focus = true;
 			} else if (event.type == sf::Event::KeyPressed) {
-				if (event.key.code == sf::Keyboard::F3) {
+				if (event.key.code == sf::Keyboard::F1) {
+					world.clear_cache();
+				} else if (event.key.code == sf::Keyboard::F2) {
+					renderer.show_minimap = !renderer.show_minimap;
+				} else if (event.key.code == sf::Keyboard::F3) {
 					renderer.debug = !renderer.debug;
 				}
 			} else if (event.type == sf::Event::Resized) {
 				double area = event.size.width * event.size.height;
-				sf::Vector2u size(std::sqrt(area)/12 * 16, std::sqrt(area)/12 * 9);
+				sf::Vector2u size(std::sqrt(area) / 12 * 16, std::sqrt(area) / 12 * 9);
 				if (size.x != event.size.width) {
 					window.setSize(size);
 				}
@@ -78,7 +82,7 @@ int main() {
 				window.setView(view);
 			}
 		}
-		
+
 		if (focus) {
 			// Movement
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {

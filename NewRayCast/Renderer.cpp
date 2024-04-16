@@ -89,6 +89,7 @@ Renderer::Renderer(sf::RenderWindow& window) {
 	font.loadFromFile("resources\\font.ttf");
 	noise_shader.loadFromFile("resources\\noise.glsl", sf::Shader::Fragment);
 	debug = false;
+	show_minimap = true;
 }
 
 void Renderer::update(World& world, Player& camera, double fov, double rays, double dt) {
@@ -161,7 +162,9 @@ void Renderer::update(World& world, Player& camera, double fov, double rays, dou
 	window->draw(scene, &noise_shader);
 
 	//draw hud here so its not noised
-	draw_minimap(world, camera);
+	if (show_minimap) {
+		draw_minimap(world, camera);
+	}
 
 	if (debug) {
 		sf::Text title = text_of("Camera Debug");

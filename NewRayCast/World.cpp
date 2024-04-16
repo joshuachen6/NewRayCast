@@ -102,3 +102,9 @@ void World::spawn_entity(std::string entity, sf::Vector3f position) {
 
 	add_entity(new Entity(entity_map[entity]));
 }
+
+void World::clear_cache() {
+	entity_map.clear();
+	texture_map.clear();
+	model_map.clear();
+}
