@@ -113,8 +113,10 @@ void Physics::apply_physics(World& world, double dt) {
 				entity.velocity -= entity_normal;
 				other.velocity -= other_normal;
 
-				entity.velocity += new_normal;
-				other.velocity += new_normal;
+				if (!other.is_static) {
+					entity.velocity += new_normal;
+					other.velocity += new_normal;
+				}
 
 				sf::Vector2f offset = scale(normalized_dist, distance - (entity.radius + other.radius));
 				entity.location.x += offset.x;

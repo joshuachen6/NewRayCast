@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "dependencies": [
     "sfml",
-    "boost-filesystem",
+    "sol2",
     "boost-algorithm",
     "boost-lockfree"
   ]

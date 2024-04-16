@@ -8,8 +8,9 @@
 
 class World {
 private:
-	std::unordered_map<std::string, sf::Texture> textures;
-	std::unordered_map<std::string, std::vector<Vertex>> models;
+	std::unordered_map<std::string, sf::Texture> texture_map;
+	std::unordered_map<std::string, std::vector<Vertex>> model_map;
+	std::unordered_map<std::string, std::unordered_map<std::string, std::string>> entity_map;
 public:
 	std::vector<std::unique_ptr<Vertex>> vertices;
 	std::vector<std::unique_ptr<Entity>> entities;
@@ -24,6 +25,8 @@ public:
 
 	void add_vertex(Vertex* vertex);
 	void add_entity(Entity* entity);
+
 	void spawn_model(std::string model, sf::Vector3f position);
+	void spawn_entity(std::string entity, sf::Vector3f position);
 };
 

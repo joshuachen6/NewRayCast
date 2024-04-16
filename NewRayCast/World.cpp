@@ -8,26 +8,27 @@
 
 std::mutex texture_mutex;
 std::mutex model_mutex;
+std::mutex entity_mutex;
 
 sf::Texture* World::load_texture(const std::string& texture) {
 	std::lock_guard<std::mutex> lock(texture_mutex);
-	if (!textures.contains(texture)) {
-		textures[texture] = sf::Texture();
+	if (!texture_map.contains(texture)) {
+		texture_map[texture] = sf::Texture();
 		if (texture.empty()) {
-			textures[texture].loadFromFile("resources\\sprites\\placeholder.png");
+			texture_map[texture].loadFromFile("resources\\sprites\\placeholder.png");
 		} else {
-			textures[texture].loadFromFile(texture);
+			texture_map[texture].loadFromFile(texture);
 		}
 	}
-	return &textures[texture];
+	return &texture_map[texture];
 }
 
 const std::vector<Vertex>& World::load_model(const std::string& model) {
 	std::lock_guard<std::mutex> lock(model_mutex);
-	if (!models.contains(model)) {
+	if (!model_map.contains(model)) {
 		std::ifstream file(model);
 		if (file.is_open()) {
-			models[model] = std::vector<Vertex>();
+			model_map[model] = std::vector<Vertex>();
 			std::string line;
 
 			std::vector<std::string> data;
@@ -49,14 +50,14 @@ const std::vector<Vertex>& World::load_model(const std::string& model) {
 					std::stod(data[3]),
 					data[4]
 				);
-				models[model].push_back(vertex);
+				model_map[model].push_back(vertex);
 			}
 		} else {
 			std::cerr << std::format("Failed to load model {}", model) << std::endl;
 		}
 		file.close();
 	}
-	return models[model];
+	return model_map[model];
 }
 
 void World::add_vertex(Vertex* vertex) {
@@ -73,4 +74,31 @@ void World::spawn_model(std::string model, sf::Vector3f position) {
 		Vertex temp = vertex.translated(position);
 		this->vertices.push_back(std::make_unique<Vertex>(temp));
 	}
+}
+
+void World::spawn_entity(std::string entity, sf::Vector3f position) {
+	std::lock_guard<std::mutex> lock(entity_mutex);
+	if (!entity_map.contains(entity)) {
+		std::ifstream file(entity);
+		if (file.is_open()) {
+			std::unordered_map < std::string, std::string> data;
+			std::string line;
+			std::vector<std::string> pair(2);
+
+			while (std::getline(file, line)) {
+				boost::trim(line);
+				boost::erase_all(line, " ");
+				boost::split(pair, line, boost::is_any_of(":"));
+				data[pair[0]] = pair[1];
+			}
+
+			entity_map[entity] = data;
+
+		} else {
+			std::cerr << std::format("Failed to load entity {}", entity) << std::endl;
+		}
+		file.close();
+	}
+
+	add_entity(new Entity(entity_map[entity]));
 }

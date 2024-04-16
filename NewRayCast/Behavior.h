@@ -1,11 +1,11 @@
 #pragma once
-#include "LivingEntity.h"
+#include "Entity.h"
 #include "World.h"
-
-class LivingEntity;
+#include <unordered_map>
+#include <sol/sol.hpp>
 
 class Behavior {
 public:
-	virtual void update(LivingEntity& entity, World& world) = 0;
+	std::unordered_map<std::string, sol::object> data;
 };
 
