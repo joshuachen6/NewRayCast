@@ -117,12 +117,22 @@ void Renderer::update(World &world, Player &camera, double fov, double rays,
                       double dt) {
   render_texture.clear();
 
+  // Render panorama
   sf::Sprite sky;
   sky.setTexture(*world.load_texture(world.sky_texture));
-  sky.setScale(
-      double(render_texture.getSize().x) / sky.getTexture()->getSize().x,
-      (render_texture.getSize().y / 2.0) / sky.getTexture()->getSize().y);
+  sky.setScale(double(render_texture.getSize().x * (2 * M_PI / fov)) /
+                   sky.getTexture()->getSize().x,
+               (render_texture.getSize().y / 2.0) /
+                   sky.getTexture()->getSize().y);
+  double skyOffset =
+      sky.getTexture()->getSize().x * (camera.location.z / (2 * M_PI));
+
+  sky.setPosition(skyOffset - sky.getTexture()->getSize().x / 2, 0);
   render_texture.draw(sky);
+  sky.setPosition(skyOffset + sky.getTexture()->getSize().x / 2, 0);
+  render_texture.draw(sky);
+
+  // Ground
   sf::Sprite ground;
   ground.setTexture(*world.load_texture(world.ground_texture));
   ground.setScale(
@@ -131,6 +141,7 @@ void Renderer::update(World &world, Player &camera, double fov, double rays,
   ground.setPosition(0, render_texture.getSize().y / 2);
   render_texture.draw(ground);
 
+  // Ray casting
   double offset = fov / rays;
   double xoffset = render_texture.getSize().x / rays;
   boost::integer_range<int> ops =
