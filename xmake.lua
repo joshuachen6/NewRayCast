@@ -1,0 +1,6 @@
+set_languages("cxx23")
+add_requires("sfml", "boost", "tbb")
+target("racingGame")
+add_includedirs("include")
+add_files("src/**.cpp")
+add_packages("sfml", "boost", "tbb")
