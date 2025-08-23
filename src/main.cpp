@@ -35,8 +35,8 @@ int main() {
   World world;
   world.gravity = 10;
   world.friction = 0.35;
-  world.sky_texture = resourceFolder / "sprites" / "night_sky.jpg";
-  world.ground_texture = resourceFolder / "sprites" / "night_grass.jpg";
+  world.sky_texture = resourceFolder / "sprites" / "sky.jpg";
+  world.ground_texture = resourceFolder / "sprites" / "grass.jpg";
 
   Player *player = new Player();
   world.add_entity(player);
@@ -46,20 +46,15 @@ int main() {
   // test spawn some trees
   for (int i = 0; i < 5; i++) {
     for (int j = 0; j < 5; j++) {
-      world.spawn_model(resourceFolder / "models" / "night_tree.txt",
-                        sf::Vector3f(250 + i * 150, j * 150, 0));
+      world.spawn_model(resourceFolder / "models" / "day_tree.txt", sf::Vector3f(250 + i * 150, j * 150, 0));
     }
   }
 
-  std::chrono::time_point<std::chrono::system_clock> last =
-      std::chrono::system_clock::now();
+  std::chrono::time_point<std::chrono::system_clock> last = std::chrono::system_clock::now();
 
   while (window.isOpen()) {
 
-    double dt = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                    std::chrono::system_clock::now() - last)
-                    .count() /
-                1e9;
+    double dt = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - last).count() / 1e9;
     last = std::chrono::system_clock::now();
 
     sf::Event event;
@@ -93,11 +88,9 @@ int main() {
     if (focus) {
       // Movement
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-        player->location.z =
-            Physics::scale_angle(player->location.z + (4 * M_PI / 7) * dt);
+        player->location.z = Physics::scale_angle(player->location.z + (4 * M_PI / 7) * dt);
       } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-        player->location.z =
-            Physics::scale_angle(player->location.z - (4 * M_PI / 7) * dt);
+        player->location.z = Physics::scale_angle(player->location.z - (4 * M_PI / 7) * dt);
       }
 
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
