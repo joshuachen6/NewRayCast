@@ -5,7 +5,7 @@ target("racingGame")
 add_includedirs("include")
 add_files("src/**.cpp")
 add_packages("sfml", "boost", "tbb")
-on_build(function(target)
+after_build(function(target)
 	--- copy the resource files over ---
 	print("Copying resources folder")
 	os.cp("resources", "$(builddir)/$(plat)/$(arch)/$(mode)/resources")
