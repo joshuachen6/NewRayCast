@@ -94,6 +94,7 @@ int main() {
       }
       Physics::apply_physics(world, dt);
       renderer.update(world, world.camera, M_PI_2, 240, dt);
+      world.cleanup();
     }
   }
 }

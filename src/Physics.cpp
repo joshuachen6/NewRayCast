@@ -7,8 +7,8 @@
 #include <memory>
 #include <set>
 
-std::vector<CastResult> Physics::cast_ray(World &world, sf::Vector3f &source,
-                                          double angle) {
+std::vector<CastResult>
+Physics::cast_ray(World &world, const sf::Vector3f &source, double angle) {
   std::vector<CastResult> hits;
 
   for (int i = 0; i < world.vertices.size(); ++i) {
@@ -57,7 +57,7 @@ double Physics::scale_angle(double radians) {
 }
 
 bool Physics::hits_vertex(Vertex &vertex, sf::Vector2f &point,
-                          sf::Vector3f &source, double angle) {
+                          const sf::Vector3f &source, double angle) {
   double slope = tan(angle);
   double b = source.y - source.x * slope;
   double cx, cy;

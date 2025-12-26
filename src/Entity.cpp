@@ -4,7 +4,8 @@
 #include <spdlog/spdlog.h>
 
 Entity::Entity(lua_State *L, const std::string &script, sf::Vector3f location)
-    : onStart(L), onCollide(L), onUpdate(L), onInteract(L), onDamage(L) {
+    : onStart(L), onCollide(L), onUpdate(L), onInteract(L), onDamage(L),
+      onDeath(L) {
 
   if (luaL_dofile(L, script.c_str()) == LUA_OK) {
     luabridge::LuaRef scriptTable = luabridge::LuaRef::fromStack(L, -1);
@@ -14,6 +15,7 @@ Entity::Entity(lua_State *L, const std::string &script, sf::Vector3f location)
     onCollide = scriptTable["on_collide"];
     onDamage = scriptTable["on_damage"];
     onInteract = scriptTable["on_interact"];
+    onDeath = scriptTable["on_death"];
     lua_pop(L, 1);
   } else {
     spdlog::error("Failed to read script {}", script);

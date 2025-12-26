@@ -13,11 +13,11 @@ const double METER = 100;
 
 class Physics {
 public:
-  static std::vector<CastResult> cast_ray(World &world, sf::Vector3f &source,
-                                          double angle);
+  static std::vector<CastResult>
+  cast_ray(World &world, const sf::Vector3f &source, double angle);
   static double scale_angle(double radians);
   static bool hits_vertex(Vertex &vertex, sf::Vector2f &point,
-                          sf::Vector3f &source, double angle);
+                          const sf::Vector3f &source, double angle);
   static void apply_physics(World &world, double dt);
 
   static double dot(sf::Vector2f a, sf::Vector2f b);

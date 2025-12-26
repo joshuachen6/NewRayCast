@@ -1,6 +1,7 @@
 #include "World.h"
 #include "Entity.h"
 #include "LuaBridge/detail/LuaException.h"
+#include "Physics.h"
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
 #include <mutex>
@@ -122,13 +123,41 @@ void World::spawn_entity(std::string entity, sf::Vector3f position) {
   }
 }
 
+void World::interact(Entity &entity, double distance) {
+  std::vector<CastResult> results =
+      Physics::cast_ray(*this, entity.location, entity.location.z);
+  for (CastResult &result : results) {
+    if (result.owner == &entity) {
+      continue;
+    }
+    if (result.distance <= distance) {
+      if (result.owner) {
+        result.owner->onInteract(result.owner, &entity);
+      }
+      break;
+    }
+  }
+}
+
+void World::destroyEntity(Entity &entity) {
+  entity.deleted = true;
+  entity.onDeath(&entity);
+}
+
 void World::clear_cache() {
   texture_map.clear();
   model_map.clear();
 }
 
-void World::initLua(lua_State *L) {
+void World::cleanup() {
+  for (int i = 0; i < entities.size(); ++i) {
+    if (entities[i]->deleted) {
+      entities.erase(entities.begin() + i);
+    }
+  }
+}
 
+void World::initLua(lua_State *L) {
   luabridge::getGlobalNamespace(L)
       .beginClass<World>("World")
       .addProperty("friction", &World::friction)
@@ -140,5 +169,7 @@ void World::initLua(lua_State *L) {
       .addFunction("vertex_from_model", &World::vertex_from_model)
       .addFunction("spawn_model", &World::spawn_model)
       .addFunction("spawn_entity", &World::spawn_entity)
+      .addFunction("interact", &World::interact)
+      .addFunction("destroy_entity", &World::destroyEntity)
       .endClass();
 }

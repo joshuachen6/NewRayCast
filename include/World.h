@@ -41,6 +41,11 @@ public:
   void spawn_model(std::string model, sf::Vector3f position);
   void spawn_entity(std::string entity, sf::Vector3f position);
 
+  void interact(Entity &entity, double distance);
+  void destroyEntity(Entity &entity);
+
+  void cleanup();
+
   void clear_cache();
 
   static void initLua(lua_State *L);
