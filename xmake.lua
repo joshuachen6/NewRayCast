@@ -1,10 +1,10 @@
 set_languages("cxx23")
 set_toolchains("clang")
-add_requires("sfml 2.6.1", "boost", "tbb", "luabridge3", "spdlog", "lua")
+add_requires("sfml 2.6.1", "boost", "tbb", "luabridge3", "spdlog", "lua", "rapidcsv")
 target("GameEngine")
 add_includedirs("include")
 add_files("src/**.cpp")
-add_packages("sfml", "boost", "tbb", "luabridge3", "spdlog", "lua")
+add_packages("sfml", "boost", "tbb", "luabridge3", "spdlog", "lua", "rapidcsv")
 after_build(function(target)
 	--- copy the resource files over ---
 	print("Copying resources folder")

@@ -3,8 +3,8 @@
 #include "LuaBridge/detail/LuaException.h"
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
-#include <fstream>
 #include <mutex>
+#include <rapidcsv.h>
 #include <spdlog/spdlog.h>
 #include <string>
 
@@ -25,7 +25,7 @@ World::World(lua_State *L, std::string script) : onStart(L), onUpdate(L) {
   }
 }
 
-sf::Texture *World::load_texture(const std::string &texture) {
+sf::Texture *World::load_texture(std::string texture) {
   std::lock_guard<std::mutex> lock(texture_mutex);
   if (!texture_map.contains(texture)) {
     texture_map[texture] = sf::Texture();
@@ -40,35 +40,44 @@ sf::Texture *World::load_texture(const std::string &texture) {
   return &texture_map[texture];
 }
 
-const std::vector<Vertex> &World::load_model(const std::string &model) {
+const std::vector<Vertex> &World::load_model(std::string model) {
   std::lock_guard<std::mutex> lock(model_mutex);
+  if (model.empty()) {
+     if (!model_map.contains("")) {
+         model_map[""] = std::vector<Vertex>();
+     }
+     return model_map[""];
+  }
   if (!model_map.contains(model)) {
-    std::ifstream file(model);
-    if (file.is_open()) {
-      model_map[model] = std::vector<Vertex>();
-      std::string line;
+    rapidcsv::Document document(model);
+    std::vector<Vertex> vertices;
+    vertices.reserve(document.GetRowCount());
+    int x1Idx = document.GetColumnIdx("x1");
+    int y1Idx = document.GetColumnIdx("y1");
+    int x2Idx = document.GetColumnIdx("x2");
+    int y2Idx = document.GetColumnIdx("y2");
+    int heightIdx = document.GetColumnIdx("height");
+    int zIdx = document.GetColumnIdx("z");
+    int modelIdx = document.GetColumnIdx("model");
 
-      std::vector<std::string> data;
-      std::vector<std::string> start(2), end(2);
-
-      while (std::getline(file, line)) {
-        boost::trim(line);
-        boost::erase_all(line, " ");
-
-        boost::split(data, line, boost::is_any_of(";"));
-
-        boost::split(start, data[0], boost::is_any_of(","));
-        boost::split(end, data[1], boost::is_any_of(","));
-
-        Vertex vertex(sf::Vector2f(std::stod(start[0]), std::stod(start[1])),
-                      sf::Vector2f(std::stod(end[0]), std::stod(end[1])),
-                      std::stod(data[2]), std::stod(data[3]), data[4]);
-        model_map[model].push_back(vertex);
-      }
-    } else {
-      spdlog::error("Failed to load model {}", model);
+    if (x1Idx == -1 || y1Idx == -1 || x2Idx == -1 || y2Idx == -1) {
+        spdlog::error("Failed to find required columns in model {}", model);
+        model_map[model] = std::vector<Vertex>();
+        return model_map[model];
     }
-    file.close();
+    
+    spdlog::info("Loading model {}: {} vertices", model, document.GetRowCount());
+
+    for (int i = 0; i < document.GetRowCount(); ++i) {
+      vertices.emplace_back(Vertex({document.GetCell<float>(x1Idx, i),
+                                    document.GetCell<float>(y1Idx, i)},
+                                   {document.GetCell<float>(x2Idx, i),
+                                    document.GetCell<float>(y2Idx, i)},
+                                   document.GetCell<float>(heightIdx, i),
+                                   document.GetCell<float>(zIdx, i),
+                                   document.GetCell<std::string>(modelIdx, i)));
+    }
+    model_map[model] = std::move(vertices);
   }
   return model_map[model];
 }
@@ -79,6 +88,13 @@ void World::add_vertex(Vertex *vertex) {
 
 void World::add_entity(Entity *entity) {
   entities.push_back(std::unique_ptr<Entity>(entity));
+}
+
+void World::vertex_from_model(std::string model) {
+  const std::vector<Vertex> &vertecies = load_model(model);
+  for (const Vertex &vertex : vertecies) {
+    add_vertex(new Vertex(vertex));
+  }
 }
 
 void World::spawn_model(std::string model, sf::Vector3f position) {
@@ -120,6 +136,7 @@ void World::initLua(lua_State *L) {
       .addProperty("ground_texture", &World::ground_texture)
       .addProperty("camera", &World::camera)
       .addFunction("load_texture", &World::load_texture)
+      .addFunction("vertex_from_model", &World::vertex_from_model)
       .addFunction("spawn_model", &World::spawn_model)
       .addFunction("spawn_entity", &World::spawn_entity)
       .endClass();

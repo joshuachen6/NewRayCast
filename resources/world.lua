@@ -9,14 +9,8 @@ function World.on_start(self)
 	self.sky_texture = "resources/sprites/sky.jpg"
 	self.ground_texture = "resources/sprites/grass.jpg"
 
-	print("Spawning Player")
-	local success, err = pcall(function()
-		self:spawn_entity("resources/scripts/player.lua", Vector3(0, 0, 0))
-	end)
-
-	if not success then
-		print("LUA ERROR: " .. tostring(err))
-	end
+	self:vertex_from_model("resources/models/world1.csv", Vector3(0, 0, 0))
+	self:spawn_entity("resources/scripts/player.lua", Vector3(0, 0, 0))
 end
 
 function World.on_update(self, dt) end

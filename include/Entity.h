@@ -12,9 +12,9 @@ public:
   sf::Vector3f location;
   sf::Vector2f velocity;
   sf::Vector2f acceleration;
-  double mass;
-  double radius;
-  bool is_static;
+  double mass = 1.0;
+  double radius = 1.0;
+  bool is_static = false;
 
   luabridge::LuaRef onStart;
   luabridge::LuaRef onCollide;

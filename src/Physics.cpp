@@ -22,6 +22,7 @@ std::vector<CastResult> Physics::cast_ray(World &world, sf::Vector3f &source,
   }
 
   for (std::unique_ptr<Entity> &entity : world.entities) {
+    if (entity->model.empty()) continue;
     sf::Vector2f hit;
     const std::vector<Vertex> &vertices = world.load_model(entity->model);
     for (const Vertex &vertex : vertices) {

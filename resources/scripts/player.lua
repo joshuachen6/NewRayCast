@@ -1,8 +1,8 @@
 local Player = {}
 
 function Player.on_start(self)
-	print("Spawned player")
 	self.mass = 100
+	self.radius = 5
 end
 
 function Player.on_update(self, dt)

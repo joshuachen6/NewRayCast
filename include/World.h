@@ -31,11 +31,12 @@ public:
 
   sf::Vector3f camera;
 
-  sf::Texture *load_texture(const std::string &texture);
-  const std::vector<Vertex> &load_model(const std::string &model);
+  sf::Texture *load_texture(std::string texture);
+  const std::vector<Vertex> &load_model(std::string model);
 
   void add_vertex(Vertex *vertex);
   void add_entity(Entity *entity);
+  void vertex_from_model(std::string model);
 
   void spawn_model(std::string model, sf::Vector3f position);
   void spawn_entity(std::string entity, sf::Vector3f position);

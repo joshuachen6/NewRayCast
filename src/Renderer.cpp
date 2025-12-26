@@ -157,7 +157,7 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
         if (hits.size()) {
           for (int j = hits.size() - 1; j >= 0; j--) {
             CastResult &closest = hits[j];
-            if (closest.entity->location == camera) {
+            if (closest.entity and closest.entity->location == camera) {
               continue;
             }
             sf::Texture *texture = world.load_texture(closest.vertex->texture);
