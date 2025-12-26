@@ -1,14 +1,38 @@
 #include "Entity.h"
 #include <boost/algorithm/string.hpp>
+#include <lauxlib.h>
+#include <spdlog/spdlog.h>
 
-Entity::Entity(std::unordered_map<std::string, std::string> &data,
-               sf::Vector3f location) {
-  model = data["model"];
-  script = data["script"];
+Entity::Entity(lua_State *L, const std::string &script, sf::Vector3f location)
+    : onStart(L), onCollide(L), onUpdate(L), onInteract(L), onDamage(L),
+      onDeath(L) {
   this->location = location;
-  mass = std::stod(data["mass"]);
-  radius = std::stod(data["radius"]);
-  std::string is_static = data["is_static"];
-  boost::to_lower(is_static);
-  this->is_static = is_static == "true";
+
+  if (luaL_dofile(L, script.c_str()) == LUA_OK) {
+    luabridge::LuaRef scriptTable = luabridge::LuaRef::fromStack(L, -1);
+
+    onStart = scriptTable["on_start"];
+    onUpdate = scriptTable["on_update"];
+    onCollide = scriptTable["on_collide"];
+    onDamage = scriptTable["on_damage"];
+    onInteract = scriptTable["on_interact"];
+    onDeath = scriptTable["on_death"];
+    lua_pop(L, 1);
+  } else {
+    spdlog::error("Failed to read script {}", script);
+  }
+}
+
+void Entity::initLua(lua_State *L) {
+  luabridge::getGlobalNamespace(L)
+      .beginClass<Entity>("Entity")
+      .addProperty("model", &Entity::model)
+      .addProperty("script", &Entity::script)
+      .addProperty("location", &Entity::location)
+      .addProperty("velocity", &Entity::velocity)
+      .addProperty("acceleration", &Entity::acceleration)
+      .addProperty("mass", &Entity::mass)
+      .addProperty("radius", &Entity::radius)
+      .addProperty("is_static", &Entity::is_static)
+      .endClass();
 }

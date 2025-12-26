@@ -1,25 +1,19 @@
 #include "Renderer.h"
-#include "Vertex.h"
 #include "World.h"
 #include <chrono>
+#include <lua.h>
 #define _USE_MATH_DEFINES
 #include "Physics.h"
-#include "Player.h"
+#include <Controls.h>
 #include <filesystem>
 #include <math.h>
-
-// Test class
-class DumbModel : public Entity {
-public:
-  DumbModel() {
-    model = "./resources/models/day_tree.txt";
-    location = sf::Vector3f(100, 0, M_PI_2);
-    radius = 50;
-    mass = 10;
-  }
-};
+#include <spdlog/spdlog.h>
 
 int main() {
+
+  lua_State *L = luaL_newstate();
+  luaL_openlibs(L);
+
   // get the folder for the resources
   std::filesystem::path resourceFolder("resources");
 
@@ -32,23 +26,18 @@ int main() {
 
   Renderer renderer(window);
 
-  World world;
-  world.gravity = 10;
-  world.friction = 0.35;
-  world.sky_texture = resourceFolder / "sprites" / "night_sky.jpg";
-  world.ground_texture = resourceFolder / "sprites" / "night_grass.jpg";
+  Controls::initLua(L);
+  Physics::initLua(L);
+  Entity::initLua(L);
+  World::initLua(L);
 
-  Player *player = new Player();
-  world.add_entity(player);
+  World world(L, resourceFolder / "world.lua");
+  luabridge::setGlobal(L, &world, "world");
 
-  world.add_entity(new DumbModel());
-
-  // test spawn some trees
-  for (int i = 0; i < 5; i++) {
-    for (int j = 0; j < 5; j++) {
-      world.spawn_model(resourceFolder / "models" / "night_tree.txt",
-                        sf::Vector3f(250 + i * 150, j * 150, 0));
-    }
+  try {
+    world.onStart(&world);
+  } catch (const luabridge::LuaException &e) {
+    spdlog::error("Luabridge execption starting world {}", e.what());
   }
 
   std::chrono::time_point<std::chrono::system_clock> last =
@@ -91,29 +80,21 @@ int main() {
     }
 
     if (focus) {
-      // Movement
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-        player->location.z =
-            Physics::scale_angle(player->location.z + (4 * M_PI / 7) * dt);
-      } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-        player->location.z =
-            Physics::scale_angle(player->location.z - (4 * M_PI / 7) * dt);
+      try {
+        world.onUpdate(&world, dt);
+      } catch (const luabridge::LuaException &e) {
+        spdlog::error("Luabridge execption updating world {}", e.what());
       }
-
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-        if (Physics::mag(player->velocity) < 2 * METER) {
-          player->velocity.x += cos(player->location.z) * 3.5 * METER * dt;
-          player->velocity.y += sin(player->location.z) * 3.5 * METER * dt;
-        }
-      } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-        if (Physics::mag(player->velocity) < 2 * METER) {
-          player->velocity.x -= cos(player->location.z) * 3.5 * METER * dt;
-          player->velocity.y -= sin(player->location.z) * 3.5 * METER * dt;
+      for (std::unique_ptr<Entity> &entity : world.entities) {
+        try {
+          entity->onUpdate(entity.get(), dt);
+        } catch (const luabridge::LuaException &e) {
+          spdlog::error("Luabridge execption updating entity {}", e.what());
         }
       }
-
       Physics::apply_physics(world, dt);
-      renderer.update(world, *player, M_PI_2, 240, dt);
+      renderer.update(world, world.camera, M_PI_2, 240, dt);
+      world.cleanup();
     }
   }
 }

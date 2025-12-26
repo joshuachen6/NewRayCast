@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "Physics.h"
+#include "SFML/System/Vector3.hpp"
 #include <boost/lockfree/queue.hpp>
 #include <boost/range/irange.hpp>
 #include <cmath>
@@ -8,7 +9,7 @@
 #include <format>
 #include <memory>
 
-sf::Sprite *Renderer::get_column(sf::Texture *texture, Vertex &vertex,
+sf::Sprite *Renderer::get_column(sf::Texture *texture, const Vertex &vertex,
                                  sf::Vector2f &collision, int cols) {
   sf::Sprite *sprite = new sf::Sprite(*texture);
   double scale = texture->getSize().x / vertex.length();
@@ -19,7 +20,7 @@ sf::Sprite *Renderer::get_column(sf::Texture *texture, Vertex &vertex,
   return sprite;
 }
 
-void Renderer::draw_minimap(World &world, Player &camera) {
+void Renderer::draw_minimap(World &world, sf::Vector3f &camera) {
   // the range of the minimap:
   double range = 3.5 * METER;
   double on_screen_radius = window->getSize().y / 6;
@@ -35,7 +36,7 @@ void Renderer::draw_minimap(World &world, Player &camera) {
   dish.setPosition(center - sf::Vector2f(on_screen_radius, on_screen_radius));
   window->draw(dish);
 
-  sf::Vector2f pos = Physics::squash(camera.location);
+  sf::Vector2f pos = Physics::squash(camera);
   for (const std::unique_ptr<Vertex> &vertex : world.vertices) {
     if (Physics::distance(pos, vertex->start) < range &&
         Physics::distance(pos, vertex->start) < range) {
@@ -85,13 +86,14 @@ void Renderer::draw_minimap(World &world, Player &camera) {
 
   sf::Vector2f offset;
   for (int i = 0; i < 4; i++) {
-    double radius = camera.radius * scale * 1 / (i + 1);
+    // TODO: Figure out this magic number
+    double radius = 10 * scale * 1 / (i + 1);
     sf::CircleShape cursor(radius);
     cursor.setFillColor(sf::Color::Blue);
     cursor.setPosition(center - sf::Vector2f(radius, radius) + offset);
     window->draw(cursor);
-    offset += sf::Vector2f(radius * std::cos(camera.location.z),
-                           -radius * std::sin(camera.location.z));
+    offset +=
+        sf::Vector2f(radius * std::cos(camera.z), -radius * std::sin(camera.z));
   }
 }
 
@@ -113,8 +115,8 @@ Renderer::Renderer(sf::RenderWindow &window) {
   show_minimap = true;
 }
 
-void Renderer::update(World &world, Player &camera, double fov, double rays,
-                      double dt) {
+void Renderer::update(World &world, sf::Vector3f &camera, double fov,
+                      double rays, double dt) {
   render_texture.clear();
 
   // Render panorama
@@ -124,8 +126,7 @@ void Renderer::update(World &world, Player &camera, double fov, double rays,
                    sky.getTexture()->getSize().x,
                (render_texture.getSize().y / 2.0) /
                    sky.getTexture()->getSize().y);
-  double skyOffset =
-      sky.getTexture()->getSize().x * (camera.location.z / (2 * M_PI));
+  double skyOffset = sky.getTexture()->getSize().x * (camera.z / (2 * M_PI));
 
   sky.setPosition(skyOffset - sky.getTexture()->getSize().x / 2, 0);
   render_texture.draw(sky);
@@ -150,29 +151,34 @@ void Renderer::update(World &world, Player &camera, double fov, double rays,
 
   std::for_each(
       std::execution::par_unseq, ops.begin(), ops.end(), [&](const int &i) {
-        double angle = Physics::scale_angle(offset * i + camera.location.z);
+        double angle = Physics::scale_angle(offset * i + camera.z);
 
-        std::vector<CastResult> hits =
-            Physics::cast_ray(world, camera.location, angle);
+        std::vector<CastResult> hits = Physics::cast_ray(world, camera, angle);
         if (hits.size()) {
           for (int j = hits.size() - 1; j >= 0; j--) {
             CastResult &closest = hits[j];
-            if (closest.entity == &camera) {
+            if (closest.owner and closest.owner->location == camera) {
               continue;
             }
-            sf::Texture *texture = world.load_texture(closest.vertex->texture);
+            const Vertex &temp =
+                closest.owner
+                    ? world.load_model(closest.owner->model)[closest.index]
+                    : *world.vertices[closest.index];
+
+            Vertex vertex =
+                closest.owner ? temp.translated(closest.ownerLocation) : temp;
+            sf::Texture *texture = world.load_texture(vertex.texture);
             if (texture) {
-              sf::Sprite *sprite = get_column(
-                  texture, *closest.vertex, closest.point, std::ceil(xoffset));
+              sf::Sprite *sprite = get_column(texture, vertex, closest.point,
+                                              std::ceil(xoffset));
               double trueDistance = closest.distance * cos(offset * i);
-              double vScale = (closest.vertex->height / trueDistance) *
+              double vScale = (vertex.height / trueDistance) *
                               (((double)render_texture.getSize().y) /
                                sprite->getTextureRect().height);
               double height = render_texture.getSize().y / 2 -
                               sprite->getTextureRect().height / 2 * vScale;
-              double dist =
-                  (METER - closest.vertex->height - closest.vertex->z) /
-                  (2 * trueDistance) * render_texture.getSize().y;
+              double dist = (METER - vertex.height - vertex.z) /
+                            (2 * trueDistance) * render_texture.getSize().y;
               sprite->setScale(1, vScale);
               sprite->setPosition(
                   sf::Vector2f(-i * xoffset + render_texture.getSize().x / 2 -
@@ -224,22 +230,15 @@ void Renderer::update(World &world, Player &camera, double fov, double rays,
     title.setCharacterSize(24);
     window->draw(title);
 
-    sf::Text pos = text_of(std::format(
-        "Position ({}, {})", int(camera.location.x), int(camera.location.y)));
+    sf::Text pos =
+        text_of(std::format("Position ({}, {})", int(camera.x), int(camera.y)));
     pos.setFillColor(sf::Color::Cyan);
     pos.setCharacterSize(16);
     pos.setPosition(0, 24);
     window->draw(pos);
 
-    sf::Text vel = text_of(std::format(
-        "Velocity ({}, {})", int(camera.velocity.x), int(camera.velocity.y)));
-    vel.setFillColor(sf::Color::Blue);
-    vel.setCharacterSize(16);
-    vel.setPosition(0, 40);
-    window->draw(vel);
-
-    sf::Text yaw = text_of(
-        std::format("Yaw {}", int(Physics::to_degrees(camera.location.z))));
+    sf::Text yaw =
+        text_of(std::format("Yaw {}", int(Physics::to_degrees(camera.z))));
     yaw.setFillColor(sf::Color::Green);
     yaw.setCharacterSize(16);
     yaw.setPosition(0, 56);

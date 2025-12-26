@@ -1,34 +1,52 @@
 #pragma once
-#include <vector>
 #include "Entity.h"
+#include "SFML/System/Vector3.hpp"
 #include "Vertex.h"
-#include <unordered_map>
 #include <SFML/Graphics.hpp>
 #include <memory>
+#include <unordered_map>
+#include <vector>
+
+#include <lua.hpp>
+
+#include <LuaBridge/LuaBridge.h>
 
 class World {
 private:
-	std::unordered_map<std::string, sf::Texture> texture_map;
-	std::unordered_map<std::string, std::vector<Vertex>> model_map;
-	std::unordered_map<std::string, std::unordered_map<std::string, std::string>> entity_map;
+  std::unordered_map<std::string, sf::Texture> texture_map;
+  std::unordered_map<std::string, std::vector<Vertex>> model_map;
+
 public:
-	std::vector<std::unique_ptr<Vertex>> vertices;
-	std::vector<std::unique_ptr<Entity>> entities;
+  luabridge::LuaRef onStart;
+  luabridge::LuaRef onUpdate;
 
-	double friction;
-	double gravity;
-	std::string sky_texture;
-	std::string ground_texture;
+  World(lua_State *L, std::string script);
+  std::vector<std::unique_ptr<Vertex>> vertices;
+  std::vector<std::unique_ptr<Entity>> entities;
 
-	sf::Texture* load_texture(const std::string& texture);
-	const std::vector<Vertex>& load_model(const std::string& model);
+  double friction;
+  double gravity;
+  std::string sky_texture;
+  std::string ground_texture;
 
-	void add_vertex(Vertex* vertex);
-	void add_entity(Entity* entity);
+  sf::Vector3f camera;
 
-	void spawn_model(std::string model, sf::Vector3f position);
-	void spawn_entity(std::string entity, sf::Vector3f position);
+  sf::Texture *load_texture(std::string texture);
+  const std::vector<Vertex> &load_model(std::string model);
 
-	void clear_cache();
+  void add_vertex(Vertex *vertex);
+  void add_entity(Entity *entity);
+  void vertex_from_model(std::string model);
+
+  void spawn_model(std::string model, sf::Vector3f position);
+  void spawn_entity(std::string entity, sf::Vector3f position);
+
+  void interact(Entity &entity, double distance);
+  void destroyEntity(Entity &entity);
+
+  void cleanup();
+
+  void clear_cache();
+
+  static void initLua(lua_State *L);
 };
-

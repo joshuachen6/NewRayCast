@@ -1,0 +1,8 @@
+x1,y1,x2,y2,height,z,model
+-206,-136,104,-204,200,0,resources/sprites/tree.png
+105,-204,248,-105,200,0,resources/sprites/tree.png
+250,-97,276,107,200,0,resources/sprites/tree.png
+277,114,63,271,200,0,resources/sprites/tree.png
+63,271,-186,147,200,0,resources/sprites/tree.png
+-186,147,-340,54,200,0,resources/sprites/tree.png
+-340,54,-204,-137,200,0,resources/sprites/tree.png
