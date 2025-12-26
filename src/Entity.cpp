@@ -34,5 +34,6 @@ void Entity::initLua(lua_State *L) {
       .addProperty("mass", &Entity::mass)
       .addProperty("radius", &Entity::radius)
       .addProperty("is_static", &Entity::is_static)
+      .addProperty("on_damage", &Entity::onDamage)
       .endClass();
 }

@@ -10,6 +10,7 @@ void Controls::initLua(lua_State *L) {
   static int A = sf::Keyboard::Key::A;
   static int S = sf::Keyboard::Key::S;
   static int D = sf::Keyboard::Key::D;
+  static int Space = sf::Keyboard::Key::Space;
 
   luabridge::getGlobalNamespace(L)
       // Add the function
@@ -20,5 +21,6 @@ void Controls::initLua(lua_State *L) {
       .addProperty("A", &A, false)
       .addProperty("S", &S, false)
       .addProperty("D", &D, false)
+      .addProperty("Space", &Space, false)
       .endNamespace();
 }

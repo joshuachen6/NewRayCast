@@ -159,7 +159,8 @@ void Physics::apply_physics(World &world, double dt) {
       bool valid = true;
       CastResult &result = potential_hits[0];
       int i = 0;
-      while (whitelist.contains({result.index, result.owner})) {
+      while (whitelist.contains({result.index, result.owner}) or
+             result.owner == &entity) {
         i++;
         if (i >= potential_hits.size()) {
           valid = false;

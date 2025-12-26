@@ -8,9 +8,6 @@ end
 
 function Coin.on_collide(self, other)
 	if Game then
-		-- specific check to avoid rapid firing if multiple collisions happen before cleanup
-		-- (Though existing C++ logic seems to handle cleanup at end of frame)
-		
 		Game.score = Game.score + 1
 		print("Collected Coin! Score: " .. Game.score .. "/" .. (Game.total_coins or "?"))
 		
@@ -24,10 +21,6 @@ function Coin.on_collide(self, other)
 	end
 	
 	world:destroy_entity(self)
-    -- Move it far away prevents further collision this frame?
-    local loc = self.location
-    loc.x = -99999
-    self.location = loc
 end
 
 function Coin.on_update(self, dt)
