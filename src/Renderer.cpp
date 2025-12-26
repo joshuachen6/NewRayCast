@@ -9,7 +9,7 @@
 #include <format>
 #include <memory>
 
-sf::Sprite *Renderer::get_column(sf::Texture *texture, Vertex &vertex,
+sf::Sprite *Renderer::get_column(sf::Texture *texture, const Vertex &vertex,
                                  sf::Vector2f &collision, int cols) {
   sf::Sprite *sprite = new sf::Sprite(*texture);
   double scale = texture->getSize().x / vertex.length();
@@ -157,22 +157,28 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
         if (hits.size()) {
           for (int j = hits.size() - 1; j >= 0; j--) {
             CastResult &closest = hits[j];
-            if (closest.entity and closest.entity->location == camera) {
+            if (closest.owner and closest.owner->location == camera) {
               continue;
             }
-            sf::Texture *texture = world.load_texture(closest.vertex->texture);
+            const Vertex &temp =
+                closest.owner
+                    ? world.load_model(closest.owner->model)[closest.index]
+                    : *world.vertices[closest.index];
+
+            Vertex vertex =
+                closest.owner ? temp.translated(closest.ownerLocation) : temp;
+            sf::Texture *texture = world.load_texture(vertex.texture);
             if (texture) {
-              sf::Sprite *sprite = get_column(
-                  texture, *closest.vertex, closest.point, std::ceil(xoffset));
+              sf::Sprite *sprite = get_column(texture, vertex, closest.point,
+                                              std::ceil(xoffset));
               double trueDistance = closest.distance * cos(offset * i);
-              double vScale = (closest.vertex->height / trueDistance) *
+              double vScale = (vertex.height / trueDistance) *
                               (((double)render_texture.getSize().y) /
                                sprite->getTextureRect().height);
               double height = render_texture.getSize().y / 2 -
                               sprite->getTextureRect().height / 2 * vScale;
-              double dist =
-                  (METER - closest.vertex->height - closest.vertex->z) /
-                  (2 * trueDistance) * render_texture.getSize().y;
+              double dist = (METER - vertex.height - vertex.z) /
+                            (2 * trueDistance) * render_texture.getSize().y;
               sprite->setScale(1, vScale);
               sprite->setPosition(
                   sf::Vector2f(-i * xoffset + render_texture.getSize().x / 2 -

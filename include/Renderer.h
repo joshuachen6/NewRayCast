@@ -8,7 +8,7 @@ class Renderer {
 private:
   sf::RenderWindow *window;
   sf::RenderTexture render_texture;
-  sf::Sprite *get_column(sf::Texture *texture, Vertex &vertex,
+  sf::Sprite *get_column(sf::Texture *texture, const Vertex &vertex,
                          sf::Vector2f &collision, int cols);
   sf::Font font;
   sf::Shader noise_shader;

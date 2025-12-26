@@ -43,10 +43,10 @@ sf::Texture *World::load_texture(std::string texture) {
 const std::vector<Vertex> &World::load_model(std::string model) {
   std::lock_guard<std::mutex> lock(model_mutex);
   if (model.empty()) {
-     if (!model_map.contains("")) {
-         model_map[""] = std::vector<Vertex>();
-     }
-     return model_map[""];
+    if (!model_map.contains("")) {
+      model_map[""] = std::vector<Vertex>();
+    }
+    return model_map[""];
   }
   if (!model_map.contains(model)) {
     rapidcsv::Document document(model);
@@ -61,12 +61,13 @@ const std::vector<Vertex> &World::load_model(std::string model) {
     int modelIdx = document.GetColumnIdx("model");
 
     if (x1Idx == -1 || y1Idx == -1 || x2Idx == -1 || y2Idx == -1) {
-        spdlog::error("Failed to find required columns in model {}", model);
-        model_map[model] = std::vector<Vertex>();
-        return model_map[model];
+      spdlog::error("Failed to find required columns in model {}", model);
+      model_map[model] = std::vector<Vertex>();
+      return model_map[model];
     }
-    
-    spdlog::info("Loading model {}: {} vertices", model, document.GetRowCount());
+
+    spdlog::info("Loading model {}: {} vertices", model,
+                 document.GetRowCount());
 
     for (int i = 0; i < document.GetRowCount(); ++i) {
       vertices.emplace_back(Vertex({document.GetCell<float>(x1Idx, i),

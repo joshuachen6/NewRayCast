@@ -1,20 +1,11 @@
 #pragma once
 #include "Entity.h"
-#include "Vertex.h"
 #include <SFML/Graphics.hpp>
-#include <memory>
 
-class CastResult {
-private:
-  std::shared_ptr<Vertex> temp_vertex;
-
-public:
-  Vertex *vertex;
-  Entity *entity;
+struct CastResult {
+  int index;
+  Entity *owner;
   sf::Vector2f point;
+  sf::Vector3f ownerLocation;
   double distance;
-
-  CastResult(sf::Vector2f point, double distance, Vertex *vertex = nullptr,
-             Entity *entity = nullptr);
-  CastResult(const CastResult &other);
 };

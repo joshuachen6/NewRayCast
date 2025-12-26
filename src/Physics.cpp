@@ -5,36 +5,36 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <memory>
-#include <unordered_set>
+#include <set>
 
 std::vector<CastResult> Physics::cast_ray(World &world, sf::Vector3f &source,
                                           double angle) {
   std::vector<CastResult> hits;
 
-  for (std::unique_ptr<Vertex> &vertex : world.vertices) {
+  for (int i = 0; i < world.vertices.size(); ++i) {
+    std::unique_ptr<Vertex> &vertex = world.vertices[i];
     sf::Vector2f hit;
     if (hits_vertex(*vertex, hit, source, angle)) {
       double distance =
           sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
       hits.push_back(
-          CastResult(sf::Vector2f(hit.x, hit.y), distance, vertex.get()));
+          CastResult(i, nullptr, sf::Vector2f(hit.x, hit.y), {}, distance));
     }
   }
 
   for (std::unique_ptr<Entity> &entity : world.entities) {
-    if (entity->model.empty()) continue;
+    if (entity->model.empty())
+      continue;
     sf::Vector2f hit;
     const std::vector<Vertex> &vertices = world.load_model(entity->model);
-    for (const Vertex &vertex : vertices) {
+    for (int i = 0; i < vertices.size(); ++i) {
+      const Vertex &vertex = vertices[i];
       Vertex temp = vertex.translated(entity->location);
-      Vertex *transformed = new Vertex(temp);
-      if (hits_vertex(*transformed, hit, source, angle)) {
+      if (hits_vertex(temp, hit, source, angle)) {
         double distance =
             sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
-        hits.push_back(CastResult(sf::Vector2f(hit.x, hit.y), distance,
-                                  transformed, entity.get()));
-      } else {
-        delete transformed;
+        hits.push_back(CastResult(i, entity.get(), sf::Vector2f(hit.x, hit.y),
+                                  entity->location, distance));
       }
     }
   }
@@ -150,7 +150,7 @@ void Physics::apply_physics(World &world, double dt) {
     }
 
     std::vector<CastResult> potential_hits;
-    std::unordered_set<Vertex *> whitelist;
+    std::set<std::pair<int, Entity *>> whitelist;
 
     double dir = direction(entity.velocity);
     sf::Vector3f source(entity.location.x, entity.location.y, dir);
@@ -159,7 +159,7 @@ void Physics::apply_physics(World &world, double dt) {
       bool valid = true;
       CastResult &result = potential_hits[0];
       int i = 0;
-      while (whitelist.contains(result.vertex) || result.entity) {
+      while (whitelist.contains({result.index, result.owner})) {
         i++;
         if (i >= potential_hits.size()) {
           valid = false;
@@ -176,8 +176,14 @@ void Physics::apply_physics(World &world, double dt) {
         break;
       }
 
-      sf::Vector2f wall_tangent =
-          normalize(result.vertex->start - result.vertex->end);
+      const Vertex &temp =
+          result.owner ? world.load_model(result.owner->model)[result.index]
+                       : *world.vertices[result.index];
+
+      Vertex vertex =
+          result.owner ? temp.translated(result.ownerLocation) : temp;
+
+      sf::Vector2f wall_tangent = normalize(vertex.start - vertex.end);
       sf::Vector2f wall_normal = sf::Vector2f(-wall_tangent.y, wall_tangent.x);
       sf::Vector2f dist_vector =
           sf::Vector2f(result.point.x - entity.location.x,
@@ -204,7 +210,7 @@ void Physics::apply_physics(World &world, double dt) {
       }
 
       entity.velocity = tangent_velocity + normal_velocity;
-      whitelist.insert(result.vertex);
+      whitelist.insert({result.index, result.owner});
     }
     entity.location = sf::Vector3f(entity.location.x + entity.velocity.x * dt,
                                    entity.location.y + entity.velocity.y * dt,
