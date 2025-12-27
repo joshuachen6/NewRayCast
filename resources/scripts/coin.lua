@@ -10,16 +10,12 @@ function Coin.on_collide(self, other)
 	if Game then
 		Game.score = Game.score + 1
 		print("Collected Coin! Score: " .. Game.score .. "/" .. (Game.total_coins or "?"))
-		
+
 		if Game.total_coins and Game.score >= Game.total_coins then
-			print("***************************************")
 			print("CONGRATULATIONS! YOU FOUND ALL COINS!")
-			print("***************************************")
 		end
-	else
-		print("Collected Coin! (Game logic missing)")
 	end
-	
+
 	world:destroy_entity(self)
 end
 

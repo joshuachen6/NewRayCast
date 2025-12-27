@@ -266,7 +266,34 @@ sf::Vector2f Physics::ham(sf::Vector2f a, sf::Vector2f b) {
   return sf::Vector2f(a.x * b.x, a.y * b.y);
 }
 
+// Functions for Lua
+/// Addition
+sf::Vector3f vec3_add(const sf::Vector3f &a, const sf::Vector3f &b) {
+  return a + b;
+}
+// Subtraction
+sf::Vector3f vec3_sub(const sf::Vector3f &a, const sf::Vector3f &b) {
+  return a - b;
+}
+// Scalar Multiplication (Vector * float)
+sf::Vector3f vec3_mul(const sf::Vector3f &a, float s) { return a * s; }
+// Unary Minus (Negation)
+sf::Vector3f vec3_neg(const sf::Vector3f &a) { return -a; }
+/// Addition
+sf::Vector2f vec2_add(const sf::Vector2f &a, const sf::Vector2f &b) {
+  return a + b;
+}
+// Subtraction
+sf::Vector2f vec2_sub(const sf::Vector2f &a, const sf::Vector2f &b) {
+  return a - b;
+}
+// Scalar Multiplication (Vector * float)
+sf::Vector2f vec2_mul(const sf::Vector2f &a, float s) { return a * s; }
+// Unary Minus (Negation)
+sf::Vector2f vec2_neg(const sf::Vector2f &a) { return -a; }
+
 void Physics::initLua(lua_State *L) {
+
   luabridge::getGlobalNamespace(L)
       // Register sf::Vector3f
       .beginClass<sf::Vector3f>("Vector3")
@@ -274,12 +301,20 @@ void Physics::initLua(lua_State *L) {
       .addProperty("x", &sf::Vector3f::x)
       .addProperty("y", &sf::Vector3f::y)
       .addProperty("z", &sf::Vector3f::z)
+      .addFunction("__add", vec3_add)
+      .addFunction("__sub", vec3_sub)
+      .addFunction("__mul", vec3_mul)
+      .addFunction("__unm", vec3_neg)
       .endClass()
       // Register sf::Vector2f
       .beginClass<sf::Vector2f>("Vector2")
       .addConstructor<void (*)(float, float)>()
       .addProperty("x", &sf::Vector2f::x)
       .addProperty("y", &sf::Vector2f::y)
+      .addFunction("__add", vec2_add)
+      .addFunction("__sub", vec2_sub)
+      .addFunction("__mul", vec2_mul)
+      .addFunction("__unm", vec2_neg)
       .endClass()
       // Place in namespace
       .beginNamespace("physics")
