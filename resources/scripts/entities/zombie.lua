@@ -33,4 +33,11 @@ function Zombie:on_collide(other)
 	end
 end
 
+function Zombie:on_damage(amount)
+	self.health = self.health - amount
+	if self.health <= 0 then
+		game:get_world():destroy_entity(self)
+	end
+end
+
 return Zombie

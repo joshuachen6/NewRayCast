@@ -7,6 +7,7 @@ Entity::Entity(lua_State *L, const std::string &script, sf::Vector3f location)
     : onStart(L), onCollide(L), onUpdate(L), onInteract(L), onDamage(L),
       onDeath(L) {
   this->location = location;
+  this->script = script;
 
   if (luaL_dofile(L, script.c_str()) == LUA_OK) {
     luabridge::LuaRef scriptTable = luabridge::LuaRef::fromStack(L, -1);
