@@ -40,4 +40,8 @@ function Zombie:on_damage(amount)
 	end
 end
 
+function Zombie:on_death()
+	game:get_world():spawn_entity("resources/scripts/entities/coin.lua", self.location)
+end
+
 return Zombie

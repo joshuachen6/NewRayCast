@@ -1,5 +1,6 @@
 GameData = {
 	player = nil,
+	score = 0,
 }
 
 local Game = {}

@@ -1,4 +1,5 @@
 local Bullet = {}
+local lifetime = 0
 
 function Bullet:on_start()
 	self.mass = 1
@@ -7,9 +8,16 @@ function Bullet:on_start()
 end
 
 function Bullet:on_collide(other)
-    if other ~= GameData.player then
+    if other.script ~= "resources/scripts/entities/player.lua" then
         game:get_world():destroy_entity(self)
         other:damage(100)
+    end
+end
+
+function Bullet:on_update(dt)
+    lifetime = lifetime + dt
+    if lifetime > 5 then
+        game:get_world():destroy_entity(self)
     end
 end
 

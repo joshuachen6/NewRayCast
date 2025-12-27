@@ -1,27 +1,21 @@
 local Coin = {}
 
-function Coin.on_start(self)
+function Coin:on_start()
 	self.model = "resources/models/coin.csv"
 	self.radius = 10
 	self.is_static = true
 end
 
-function Coin.on_collide(self, other)
-	if Game then
-		Game.score = Game.score + 1
-		print("Collected Coin! Score: " .. Game.score .. "/" .. (Game.total_coins or "?"))
-
-		if Game.total_coins and Game.score >= Game.total_coins then
-			print("CONGRATULATIONS! YOU FOUND ALL COINS!")
-		end
+function Coin:on_collide(other)
+    if other.script == "resources/scripts/entities/player.lua" then
+		GameData.score = GameData.score + 1
+		game:get_world():destroy_entity(self)
 	end
-
-	world:destroy_entity(self)
 end
 
-function Coin.on_update(self, dt)
+function Coin:on_update(dt)
 	local loc = self.location
-	loc.z = loc.z + dt * 3 -- Spin
+	loc.z = loc.z + dt * 3
 	self.location = loc
 end
 
