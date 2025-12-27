@@ -1,4 +1,6 @@
-local Zombie = {}
+local Zombie = {
+	cooldown = 0,
+}
 
 function Zombie.on_start(self)
 	self.mass = 100
@@ -7,6 +9,10 @@ function Zombie.on_start(self)
 end
 
 function Zombie.on_update(self, dt)
+	if Zombie.cooldown > 0 then
+		Zombie.cooldown = Zombie.cooldown - dt
+	end
+
 	if Game.player then
 		local vel = self.velocity
 		local loc = self.location
@@ -26,6 +32,13 @@ function Zombie.on_update(self, dt)
 
 		loc.z = target_angle
 		self.location = loc
+	end
+end
+
+function Zombie.on_collide(self, other)
+	if Zombie.cooldown <= 0 then
+		other:damage(10)
+		Zombie.cooldown = 1
 	end
 end
 

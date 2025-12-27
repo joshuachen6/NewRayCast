@@ -1,5 +1,8 @@
 #include "Renderer.h"
+#include "LuaBridge/detail/Namespace.h"
 #include "Physics.h"
+#include "SFML/Config.hpp"
+#include "SFML/System/Vector2.hpp"
 #include "SFML/System/Vector3.hpp"
 #include <boost/lockfree/queue.hpp>
 #include <boost/range/irange.hpp>
@@ -8,6 +11,7 @@
 #include <filesystem>
 #include <format>
 #include <memory>
+#include <spdlog/spdlog.h>
 
 sf::Sprite *Renderer::get_column(sf::Texture *texture, const Vertex &vertex,
                                  sf::Vector2f &collision, int cols) {
@@ -97,9 +101,10 @@ void Renderer::draw_minimap(World &world, sf::Vector3f &camera) {
   }
 }
 
-sf::Text Renderer::text_of(std::string text) {
+sf::Text Renderer::text_of(std::string text, std::string font) {
   sf::Text output;
-  output.setFont(font);
+  sf::Font &fontObject = getFont(font);
+  output.setFont(fontObject);
   output.setString(text);
   return output;
 }
@@ -108,7 +113,6 @@ Renderer::Renderer(sf::RenderWindow &window) {
   this->window = &window;
   render_texture.create(window.getSize().x, window.getSize().y);
   std::filesystem::path resourceFolder("resources");
-  font.loadFromFile(resourceFolder / "font.ttf");
   noise_shader.loadFromFile(resourceFolder / "noise.glsl",
                             sf::Shader::Fragment);
   debug = false;
@@ -224,32 +228,98 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
   }
 
   if (debug) {
-    sf::Text title = text_of("Camera Debug");
+    std::filesystem::path resources("resources");
+    std::string fontPath = resources / "fonts" / "font.ttf";
+
+    sf::Text title = text_of("Camera Debug", fontPath);
     title.setFillColor(sf::Color::White);
     title.setStyle(sf::Text::Underlined);
     title.setCharacterSize(24);
     window->draw(title);
 
     sf::Text pos =
-        text_of(std::format("Position ({}, {})", int(camera.x), int(camera.y)));
+        text_of(std::format("Position ({}, {})", int(camera.x), int(camera.y)),
+                fontPath);
     pos.setFillColor(sf::Color::Cyan);
     pos.setCharacterSize(16);
     pos.setPosition(0, 24);
     window->draw(pos);
 
-    sf::Text yaw =
-        text_of(std::format("Yaw {}", int(Physics::to_degrees(camera.z))));
+    sf::Text yaw = text_of(
+        std::format("Yaw {}", int(Physics::to_degrees(camera.z))), fontPath);
     yaw.setFillColor(sf::Color::Green);
     yaw.setCharacterSize(16);
     yaw.setPosition(0, 56);
     window->draw(yaw);
 
-    sf::Text fps = text_of(std::format("FPS {}", int(1 / dt)));
+    sf::Text fps = text_of(std::format("FPS {}", int(1 / dt)), fontPath);
     fps.setFillColor(sf::Color::White);
     fps.setCharacterSize(32);
     fps.setPosition(0, 88);
     window->draw(fps);
   }
 
+  try {
+    world.onRender(&world, this);
+  } catch (const luabridge::LuaException &e) {
+    spdlog::error("Luabridge execption on render {}", e.what());
+  }
+
   window->display();
+}
+
+sf::Font &Renderer::getFont(std::string font) {
+  if (!font_map.contains(font)) {
+    font_map[font] = sf::Font();
+    font_map[font].loadFromFile(font);
+  }
+  return font_map[font];
+}
+
+void Renderer::drawRectangle(sf::Vector2f position, sf::Vector2f size,
+                             sf::Color color) {
+  sf::RectangleShape rect(size);
+  rect.setPosition(position);
+  rect.setFillColor(color);
+  window->draw(rect);
+}
+
+void Renderer::drawCircle(sf::Vector2f position, int radius, sf::Color color) {
+  sf::CircleShape circle(radius);
+  circle.setPosition(position);
+  circle.setFillColor(color);
+  window->draw(circle);
+}
+
+void Renderer::drawText(sf::Vector2f position, std::string fontPath,
+                        std::string textStr, int size, sf::Color color) {
+
+  sf::Text text;
+  text.setFont(getFont(fontPath));
+  text.setString(textStr);
+  text.setCharacterSize(size);
+  text.setFillColor(color);
+  text.setPosition(position);
+  window->draw(text);
+}
+
+sf::Vector2f Renderer::getSize() {
+  return sf::Vector2f(window->getSize().x, window->getSize().y);
+}
+
+void Renderer::initLua(lua_State *L) {
+  luabridge::getGlobalNamespace(L)
+      .beginClass<sf::Color>("Color")
+      .addConstructor<void (*)(sf::Uint8, sf::Uint8, sf::Uint8, sf::Uint8)>()
+      .addProperty("r", &sf::Color::r)
+      .addProperty("g", &sf::Color::g)
+      .addProperty("b", &sf::Color::b)
+      .addProperty("a", &sf::Color::a)
+      .endClass()
+      .beginClass<Renderer>("Renderer")
+      .addFunction("draw_rectangle", &Renderer::drawRectangle)
+      .addFunction("draw_circle", &Renderer::drawCircle)
+      .addFunction("draw_text", &Renderer::drawText)
+      .addFunction("get_size", &Renderer::getSize)
+      .endClass();
 }

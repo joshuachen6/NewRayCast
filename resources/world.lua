@@ -27,6 +27,17 @@ function World.on_start(self)
 	end
 end
 
-function World.on_update(self, dt) end
+function World.on_render(self, renderer)
+	if Game.player then
+		local screen_size = renderer:get_size()
+		renderer:draw_text(
+			Vector2(0, 0),
+			"resources/fonts/font.ttf",
+			tostring(Game.player.health),
+			screen_size.y / 20,
+			Color(255, 255, 255, 255)
+		)
+	end
+end
 
 return World

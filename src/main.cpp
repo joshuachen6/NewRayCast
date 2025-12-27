@@ -30,6 +30,7 @@ int main() {
   Physics::initLua(L);
   Entity::initLua(L);
   World::initLua(L);
+  Renderer::initLua(L);
 
   World world(L, resourceFolder / "world.lua");
   luabridge::setGlobal(L, &world, "world");

@@ -39,4 +39,8 @@ function Player.on_update(self, dt)
 	world.camera = loc
 end
 
+function Player.on_damage(self, damage)
+	self.health = self.health - damage
+end
+
 return Player

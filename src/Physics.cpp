@@ -118,34 +118,46 @@ void Physics::apply_physics(World &world, double dt) {
       sf::Vector2f distance_vector =
           squash(other.location) - squash(entity.location);
       double distance = mag(distance_vector);
-      if (distance < entity.radius + other.radius &&
-          dot(distance_vector, entity.velocity) > 0) {
+      if (distance < entity.radius + other.radius) {
         sf::Vector2f normalized_dist = normalize(distance_vector);
 
-        sf::Vector2f entity_normal = project(entity.velocity, normalized_dist);
-        sf::Vector2f other_normal = project(other.velocity, normalized_dist);
-        double new_velocity = (mag(entity_normal) * entity.mass +
-                               mag(other_normal) * other.mass) /
-                              (entity.mass + other.mass);
-        sf::Vector2f new_normal =
-            scale(normalize(distance_vector), new_velocity);
+        if (dot(distance_vector, entity.velocity - other.velocity) > 0) {
+          sf::Vector2f entity_normal =
+              project(entity.velocity, normalized_dist);
+          sf::Vector2f other_normal = project(other.velocity, normalized_dist);
+          double new_velocity = (mag(entity_normal) * entity.mass +
+                                 mag(other_normal) * other.mass) /
+                                (entity.mass + other.mass);
+          sf::Vector2f new_normal =
+              scale(normalize(distance_vector), new_velocity);
 
-        entity.velocity -= entity_normal;
-        other.velocity -= other_normal;
+          entity.velocity -= entity_normal;
+          other.velocity -= other_normal;
 
-        if (!other.is_static) {
-          entity.velocity += new_normal;
-          other.velocity += new_normal;
+          if (!other.is_static) {
+            entity.velocity += new_normal;
+            other.velocity += new_normal;
+          }
         }
 
         sf::Vector2f offset =
             scale(normalized_dist, distance - (entity.radius + other.radius));
-        entity.location.x += offset.x;
-        entity.location.y += offset.y;
+
+        if (!other.is_static) {
+          entity.location.x += offset.x / 2;
+          entity.location.y += offset.y / 2;
+          other.location.x -= offset.x / 2;
+          other.location.y -= offset.y / 2;
+        } else {
+          entity.location.x += offset.x;
+          entity.location.y += offset.y;
+        }
 
         // Collision event
-        entity.onCollide(&entity, &other);
-        other.onCollide(&other, &entity);
+        if (entity.onCollide.isFunction())
+          entity.onCollide(&entity, &other);
+        if (other.onCollide.isFunction())
+          other.onCollide(&other, &entity);
       }
     }
 
