@@ -23,7 +23,25 @@ Entity::Entity(lua_State *L, const std::string &script, sf::Vector3f location)
   }
 }
 
-void Entity::damage(float damage) { onDamage(this, damage); }
+void Entity::damage(float damage) {
+  try {
+    if (onDamage) {
+      onDamage(this, damage);
+    }
+  } catch (const luabridge::LuaException &e) {
+    spdlog::error("Luabridge execption damaging entity {}", e.what());
+  }
+}
+
+void Entity::update(double dt) {
+  try {
+    if (onUpdate) {
+      onUpdate(this, dt);
+    }
+  } catch (const luabridge::LuaException &e) {
+    spdlog::error("Luabridge execption updating entity {}", e.what());
+  }
+}
 
 void Entity::initLua(lua_State *L) {
   luabridge::getGlobalNamespace(L)
@@ -37,7 +55,6 @@ void Entity::initLua(lua_State *L) {
       .addProperty("radius", &Entity::radius)
       .addProperty("health", &Entity::health)
       .addProperty("is_static", &Entity::is_static)
-      .addProperty("on_damage", &Entity::onDamage)
       .addFunction("damage", &Entity::damage)
       .endClass();
 }

@@ -45,6 +45,7 @@ public:
   void interact(Entity &entity, double distance);
   void destroyEntity(Entity &entity);
 
+  void update(double dt);
   void cleanup();
 
   void clear_cache();

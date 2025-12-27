@@ -1,13 +1,13 @@
 local Player = {}
 
-function Player.on_start(self)
+function Player:on_start()
 	self.mass = 100
 	self.radius = 5
 
-	Game.player = self
+	GameData.player = self
 end
 
-function Player.on_update(self, dt)
+function Player:on_update(dt)
 	local loc = self.location
 	local vel = self.velocity
 	local rotation_speed = (4 * math.pi / 7) * dt
@@ -36,10 +36,10 @@ function Player.on_update(self, dt)
 	self.velocity = vel
 
 	-- Sync camera
-	world.camera = loc
+	game:get_world().camera = loc
 end
 
-function Player.on_damage(self, damage)
+function Player:on_damage(damage)
 	self.health = self.health - damage
 end
 

@@ -146,6 +146,23 @@ void World::destroyEntity(Entity &entity) {
   entity.onDeath(&entity);
 }
 
+void World::update(double dt) {
+  try {
+    if (onUpdate) {
+      onUpdate(this, dt);
+    }
+  } catch (const luabridge::LuaException &e) {
+    spdlog::error("Luabridge execption updating world {}", e.what());
+  }
+
+  for (int i = 0; i < entities.size(); ++i) {
+    Entity *entity = entities[i].get();
+    if (entity and not entity->deleted) {
+      entity->update(dt);
+    }
+  }
+}
+
 void World::clear_cache() {
   texture_map.clear();
   model_map.clear();
