@@ -30,6 +30,7 @@ int main() {
   Physics::initLua(L);
   Entity::initLua(L);
   World::initLua(L);
+  Renderer::initLua(L);
 
   World world(L, resourceFolder / "world.lua");
   luabridge::setGlobal(L, &world, "world");
@@ -85,11 +86,19 @@ int main() {
       } catch (const luabridge::LuaException &e) {
         spdlog::error("Luabridge execption updating world {}", e.what());
       }
-      for (std::unique_ptr<Entity> &entity : world.entities) {
+      for (int i = 0; i < world.entities.size(); ++i) {
+        if (i >= world.entities.size())
+          break;
+
+        Entity *entity = world.entities[i].get();
+        if (not entity or entity->deleted)
+          continue;
+
         try {
-          entity->onUpdate(entity.get(), dt);
+          entity->onUpdate(entity, dt);
         } catch (const luabridge::LuaException &e) {
-          spdlog::error("Luabridge execption updating entity {}", e.what());
+          spdlog::error("Luabridge execption updating entity {}: {}", i,
+                        e.what());
         }
       }
       Physics::apply_physics(world, dt);

@@ -118,34 +118,46 @@ void Physics::apply_physics(World &world, double dt) {
       sf::Vector2f distance_vector =
           squash(other.location) - squash(entity.location);
       double distance = mag(distance_vector);
-      if (distance < entity.radius + other.radius &&
-          dot(distance_vector, entity.velocity) > 0) {
+      if (distance < entity.radius + other.radius) {
         sf::Vector2f normalized_dist = normalize(distance_vector);
 
-        sf::Vector2f entity_normal = project(entity.velocity, normalized_dist);
-        sf::Vector2f other_normal = project(other.velocity, normalized_dist);
-        double new_velocity = (mag(entity_normal) * entity.mass +
-                               mag(other_normal) * other.mass) /
-                              (entity.mass + other.mass);
-        sf::Vector2f new_normal =
-            scale(normalize(distance_vector), new_velocity);
+        if (dot(distance_vector, entity.velocity - other.velocity) > 0) {
+          sf::Vector2f entity_normal =
+              project(entity.velocity, normalized_dist);
+          sf::Vector2f other_normal = project(other.velocity, normalized_dist);
+          double new_velocity = (mag(entity_normal) * entity.mass +
+                                 mag(other_normal) * other.mass) /
+                                (entity.mass + other.mass);
+          sf::Vector2f new_normal =
+              scale(normalize(distance_vector), new_velocity);
 
-        entity.velocity -= entity_normal;
-        other.velocity -= other_normal;
+          entity.velocity -= entity_normal;
+          other.velocity -= other_normal;
 
-        if (!other.is_static) {
-          entity.velocity += new_normal;
-          other.velocity += new_normal;
+          if (!other.is_static) {
+            entity.velocity += new_normal;
+            other.velocity += new_normal;
+          }
         }
 
         sf::Vector2f offset =
             scale(normalized_dist, distance - (entity.radius + other.radius));
-        entity.location.x += offset.x;
-        entity.location.y += offset.y;
+
+        if (!other.is_static) {
+          entity.location.x += offset.x / 2;
+          entity.location.y += offset.y / 2;
+          other.location.x -= offset.x / 2;
+          other.location.y -= offset.y / 2;
+        } else {
+          entity.location.x += offset.x;
+          entity.location.y += offset.y;
+        }
 
         // Collision event
-        entity.onCollide(&entity, &other);
-        other.onCollide(&other, &entity);
+        if (entity.onCollide.isFunction())
+          entity.onCollide(&entity, &other);
+        if (other.onCollide.isFunction())
+          other.onCollide(&other, &entity);
       }
     }
 
@@ -159,7 +171,8 @@ void Physics::apply_physics(World &world, double dt) {
       bool valid = true;
       CastResult &result = potential_hits[0];
       int i = 0;
-      while (whitelist.contains({result.index, result.owner})) {
+      while (whitelist.contains({result.index, result.owner}) or
+             result.owner == &entity) {
         i++;
         if (i >= potential_hits.size()) {
           valid = false;
@@ -265,7 +278,34 @@ sf::Vector2f Physics::ham(sf::Vector2f a, sf::Vector2f b) {
   return sf::Vector2f(a.x * b.x, a.y * b.y);
 }
 
+// Functions for Lua
+/// Addition
+sf::Vector3f vec3_add(const sf::Vector3f &a, const sf::Vector3f &b) {
+  return a + b;
+}
+// Subtraction
+sf::Vector3f vec3_sub(const sf::Vector3f &a, const sf::Vector3f &b) {
+  return a - b;
+}
+// Scalar Multiplication (Vector * float)
+sf::Vector3f vec3_mul(const sf::Vector3f &a, float s) { return a * s; }
+// Unary Minus (Negation)
+sf::Vector3f vec3_neg(const sf::Vector3f &a) { return -a; }
+/// Addition
+sf::Vector2f vec2_add(const sf::Vector2f &a, const sf::Vector2f &b) {
+  return a + b;
+}
+// Subtraction
+sf::Vector2f vec2_sub(const sf::Vector2f &a, const sf::Vector2f &b) {
+  return a - b;
+}
+// Scalar Multiplication (Vector * float)
+sf::Vector2f vec2_mul(const sf::Vector2f &a, float s) { return a * s; }
+// Unary Minus (Negation)
+sf::Vector2f vec2_neg(const sf::Vector2f &a) { return -a; }
+
 void Physics::initLua(lua_State *L) {
+
   luabridge::getGlobalNamespace(L)
       // Register sf::Vector3f
       .beginClass<sf::Vector3f>("Vector3")
@@ -273,12 +313,20 @@ void Physics::initLua(lua_State *L) {
       .addProperty("x", &sf::Vector3f::x)
       .addProperty("y", &sf::Vector3f::y)
       .addProperty("z", &sf::Vector3f::z)
+      .addFunction("__add", vec3_add)
+      .addFunction("__sub", vec3_sub)
+      .addFunction("__mul", vec3_mul)
+      .addFunction("__unm", vec3_neg)
       .endClass()
       // Register sf::Vector2f
       .beginClass<sf::Vector2f>("Vector2")
       .addConstructor<void (*)(float, float)>()
       .addProperty("x", &sf::Vector2f::x)
       .addProperty("y", &sf::Vector2f::y)
+      .addFunction("__add", vec2_add)
+      .addFunction("__sub", vec2_sub)
+      .addFunction("__mul", vec2_mul)
+      .addFunction("__unm", vec2_neg)
       .endClass()
       // Place in namespace
       .beginNamespace("physics")

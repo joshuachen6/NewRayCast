@@ -3,23 +3,22 @@ local Player = {}
 function Player.on_start(self)
 	self.mass = 100
 	self.radius = 5
+
+	Game.player = self
 end
 
 function Player.on_update(self, dt)
-	-- 1. Get current state (Assuming these return copies)
 	local loc = self.location
 	local vel = self.velocity
 	local rotation_speed = (4 * math.pi / 7) * dt
 	local move_speed = 3.5 * 100 * dt
 
-	-- 2. Rotation (Use Key.A if you registered the Key table)
 	if key_pressed(Key.A) then
 		loc.z = physics.scale_angle(loc.z + rotation_speed)
 	elseif key_pressed(Key.D) then
 		loc.z = physics.scale_angle(loc.z - rotation_speed)
 	end
 
-	-- 3. Movement
 	if key_pressed(Key.W) then
 		if physics.mag(vel) < 200 then
 			vel.x = vel.x + math.cos(loc.z) * move_speed
@@ -38,6 +37,10 @@ function Player.on_update(self, dt)
 
 	-- Sync camera
 	world.camera = loc
+end
+
+function Player.on_damage(self, damage)
+	self.health = self.health - damage
 end
 
 return Player

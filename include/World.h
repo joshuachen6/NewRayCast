@@ -19,6 +19,7 @@ private:
 public:
   luabridge::LuaRef onStart;
   luabridge::LuaRef onUpdate;
+  luabridge::LuaRef onRender;
 
   World(lua_State *L, std::string script);
   std::vector<std::unique_ptr<Vertex>> vertices;

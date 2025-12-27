@@ -23,6 +23,8 @@ Entity::Entity(lua_State *L, const std::string &script, sf::Vector3f location)
   }
 }
 
+void Entity::damage(float damage) { onDamage(this, damage); }
+
 void Entity::initLua(lua_State *L) {
   luabridge::getGlobalNamespace(L)
       .beginClass<Entity>("Entity")
@@ -33,6 +35,9 @@ void Entity::initLua(lua_State *L) {
       .addProperty("acceleration", &Entity::acceleration)
       .addProperty("mass", &Entity::mass)
       .addProperty("radius", &Entity::radius)
+      .addProperty("health", &Entity::health)
       .addProperty("is_static", &Entity::is_static)
+      .addProperty("on_damage", &Entity::onDamage)
+      .addFunction("damage", &Entity::damage)
       .endClass();
 }
