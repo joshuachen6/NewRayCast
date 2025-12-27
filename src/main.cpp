@@ -1,3 +1,4 @@
+#include "Game.h"
 #include "Renderer.h"
 #include "World.h"
 #include <chrono>
@@ -30,15 +31,18 @@ int main() {
   Physics::initLua(L);
   Entity::initLua(L);
   World::initLua(L);
+  Game::initLua(L);
   Renderer::initLua(L);
 
-  World world(L, resourceFolder / "world.lua");
-  luabridge::setGlobal(L, &world, "world");
+  Game game(L, resourceFolder / "scripts" / "game.lua");
+
+  luabridge::setGlobal(L, &game, "game");
 
   try {
-    world.onStart(&world);
+    if (game.onStart)
+      game.onStart(&game);
   } catch (const luabridge::LuaException &e) {
-    spdlog::error("Luabridge execption starting world {}", e.what());
+    spdlog::error("Luabridge execption starting game {}", e.what());
   }
 
   std::chrono::time_point<std::chrono::system_clock> last =
@@ -61,9 +65,7 @@ int main() {
       } else if (event.type == sf::Event::GainedFocus) {
         focus = true;
       } else if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::F1) {
-          world.clear_cache();
-        } else if (event.key.code == sf::Keyboard::F2) {
+        if (event.key.code == sf::Keyboard::F2) {
           renderer.show_minimap = !renderer.show_minimap;
         } else if (event.key.code == sf::Keyboard::F3) {
           renderer.debug = !renderer.debug;
@@ -81,29 +83,18 @@ int main() {
     }
 
     if (focus) {
-      try {
-        world.onUpdate(&world, dt);
-      } catch (const luabridge::LuaException &e) {
-        spdlog::error("Luabridge execption updating world {}", e.what());
+      game.update(dt);
+      World *world = game.getWorld();
+      if (world) {
+        Physics::apply_physics(*world, dt);
+        renderer.update(*world, world->camera, M_PI_2, 240, dt);
+        world->cleanup();
+      } else {
+        window.clear();
+        renderer.drawText({0, 0}, resourceFolder / "fonts" / "font.ttf",
+                          "No world loaded!", 100, {255, 255, 255, 255});
+        window.display();
       }
-      for (int i = 0; i < world.entities.size(); ++i) {
-        if (i >= world.entities.size())
-          break;
-
-        Entity *entity = world.entities[i].get();
-        if (not entity or entity->deleted)
-          continue;
-
-        try {
-          entity->onUpdate(entity, dt);
-        } catch (const luabridge::LuaException &e) {
-          spdlog::error("Luabridge execption updating entity {}: {}", i,
-                        e.what());
-        }
-      }
-      Physics::apply_physics(world, dt);
-      renderer.update(world, world.camera, M_PI_2, 240, dt);
-      world.cleanup();
     }
   }
 }

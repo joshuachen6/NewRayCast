@@ -29,6 +29,7 @@ public:
          sf::Vector3f location = sf::Vector3f());
 
   void damage(float damage);
+  void update(double dt);
 
   static void initLua(lua_State *L);
 };

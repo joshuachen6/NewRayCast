@@ -2,6 +2,7 @@
 #include "LuaBridge/detail/Namespace.h"
 #include "Physics.h"
 #include "SFML/Config.hpp"
+#include "SFML/Graphics/Sprite.hpp"
 #include "SFML/System/Vector2.hpp"
 #include "SFML/System/Vector3.hpp"
 #include <boost/lockfree/queue.hpp>
@@ -260,7 +261,9 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
   }
 
   try {
-    world.onRender(&world, this);
+    if (world.onRender) {
+      world.onRender(&world, this);
+    }
   } catch (const luabridge::LuaException &e) {
     spdlog::error("Luabridge execption on render {}", e.what());
   }
@@ -303,6 +306,32 @@ void Renderer::drawText(sf::Vector2f position, std::string fontPath,
   window->draw(text);
 }
 
+void Renderer::drawSprite(sf::Vector2f position, sf::Vector2f size,
+                          std::string sprite) {
+  sf::Texture *texture = load_texture(sprite);
+  sf::Sprite s;
+  sf::Vector2u textureSize = texture->getSize();
+  s.setTexture(*texture);
+  s.setScale({size.x / textureSize.x, size.y / textureSize.y});
+  s.setPosition(position);
+  window->draw(s);
+}
+
+sf::Texture *Renderer::load_texture(std::string texture) {
+  std::lock_guard<std::mutex> lock(texture_mutex);
+  if (!texture_map.contains(texture)) {
+    texture_map[texture] = sf::Texture();
+    if (texture.empty()) {
+      std::filesystem::path resources("resources");
+      std::string placeholder = resources / "sprites" / "placeholder.png";
+      texture_map[texture].loadFromFile(placeholder);
+    } else {
+      texture_map[texture].loadFromFile(texture);
+    }
+  }
+  return &texture_map[texture];
+}
+
 sf::Vector2f Renderer::getSize() {
   return sf::Vector2f(window->getSize().x, window->getSize().y);
 }
@@ -321,5 +350,6 @@ void Renderer::initLua(lua_State *L) {
       .addFunction("draw_circle", &Renderer::drawCircle)
       .addFunction("draw_text", &Renderer::drawText)
       .addFunction("get_size", &Renderer::getSize)
+      .addFunction("draw_sprite", &Renderer::drawSprite)
       .endClass();
 }

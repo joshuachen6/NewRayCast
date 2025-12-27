@@ -109,7 +109,7 @@ void World::spawn_model(std::string model, sf::Vector3f position) {
   }
 }
 
-void World::spawn_entity(std::string entity, sf::Vector3f position) {
+Entity *World::spawn_entity(std::string entity, sf::Vector3f position) {
   if (std::filesystem::exists(entity)) {
     lua_State *L = onStart.state();
     Entity *entityObject = new Entity(L, entity, position);
@@ -120,9 +120,11 @@ void World::spawn_entity(std::string entity, sf::Vector3f position) {
     }
     add_entity(entityObject);
     spdlog::info("Spawning entity {}", entity);
-  } else {
-    spdlog::error("Could not locate entity {}", entity);
+    return entityObject;
   }
+
+  spdlog::error("Could not locate entity {}", entity);
+  return nullptr;
 }
 
 void World::interact(Entity &entity, double distance) {
@@ -144,6 +146,23 @@ void World::interact(Entity &entity, double distance) {
 void World::destroyEntity(Entity &entity) {
   entity.deleted = true;
   entity.onDeath(&entity);
+}
+
+void World::update(double dt) {
+  try {
+    if (onUpdate) {
+      onUpdate(this, dt);
+    }
+  } catch (const luabridge::LuaException &e) {
+    spdlog::error("Luabridge execption updating world {}", e.what());
+  }
+
+  for (int i = 0; i < entities.size(); ++i) {
+    Entity *entity = entities[i].get();
+    if (entity and not entity->deleted) {
+      entity->update(dt);
+    }
+  }
 }
 
 void World::clear_cache() {
