@@ -10,7 +10,7 @@ function Coin:on_collide(other)
 	if other.script == "resources/scripts/entities/player.lua" then
 		GameData.score = GameData.score + 1
 		game:get_world():destroy_entity(self)
-		audio:play_sound("resources/sounds/coin.ogx")
+		audio:play_sound_at("resources/sounds/coin.ogx", physics.squash(self.location))
 	end
 end
 

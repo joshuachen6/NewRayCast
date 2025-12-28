@@ -20,7 +20,7 @@ function Zombie:on_update(dt)
 
 	if soundCooldown <= 0 then
 		if math.random() > 0.5 then
-			audio:play_sound("resources/sounds/zombie.ogx")
+			audio:play_sound_at("resources/sounds/zombie.ogx", physics.squash(self.location))
 		end
 		soundCooldown = 2
 	end
@@ -39,9 +39,12 @@ function Zombie:on_update(dt)
 end
 
 function Zombie:on_collide(other)
-	if cooldown <= 0 then
-		other:damage(10)
-		cooldown = 1
+	if other.script == "resources/scripts/entities/player.lua" then
+		if cooldown <= 0 then
+			other:damage(10)
+			cooldown = 1
+			audio:play_sound("resources/sounds/eat.ogx")
+		end
 	end
 end
 

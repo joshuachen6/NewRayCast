@@ -11,7 +11,7 @@ function Bullet:on_collide(other)
 	if other.script ~= "resources/scripts/entities/player.lua" then
 		game:get_world():destroy_entity(self)
 		other:damage(100)
-		audio:play_sound("resources/sounds/pea_hit.ogx")
+		audio:play_sound_at("resources/sounds/pea_hit.ogx", physics.squash(self.location))
 	end
 end
 
