@@ -20,7 +20,7 @@ private:
   std::unordered_map<std::string, sf::Font> font_map;
   std::unordered_map<std::string, sf::Texture> texture_map;
 
-  sf::Shader noise_shader;
+  sf::Shader post_shader;
 
   void draw_minimap(World &world, sf::Vector3f &camera);
 

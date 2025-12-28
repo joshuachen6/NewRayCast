@@ -115,8 +115,7 @@ Renderer::Renderer(sf::RenderWindow &window) {
   this->window = &window;
   render_texture.create(window.getSize().x, window.getSize().y);
   std::filesystem::path resourceFolder("resources");
-  noise_shader.loadFromFile(resourceFolder / "noise.glsl",
-                            sf::Shader::Fragment);
+  post_shader.loadFromFile(resourceFolder / "post.glsl", sf::Shader::Fragment);
   debug = false;
   show_minimap = true;
 }
@@ -212,9 +211,8 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
   }
 
   render_texture.display();
-  noise_shader.setUniform("time", float(dt));
-  noise_shader.setUniform("scale", 0.1f);
-  noise_shader.setUniform(
+  post_shader.setUniform("time", float(dt));
+  post_shader.setUniform(
       "resolution", sf::Vector2f(window->getSize().x, window->getSize().y));
 
   window->clear();
@@ -222,7 +220,7 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
   scene.setTexture(render_texture.getTexture());
   scene.setScale(double(window->getSize().x) / scene.getTexture()->getSize().x,
                  double(window->getSize().y) / scene.getTexture()->getSize().y);
-  window->draw(scene, &noise_shader);
+  window->draw(scene, &post_shader);
 
   // draw hud here so its not noised
   if (show_minimap) {
@@ -302,7 +300,7 @@ void Renderer::drawTextWrapped(sf::Vector2f position, std::string font,
                                int width) {
   sf::Text textObject;
   textObject.setFont(getFont(font));
-  textObject.setColor(color);
+  textObject.setFillColor(color);
   textObject.setCharacterSize(size);
 
   std::istringstream stream(text);
