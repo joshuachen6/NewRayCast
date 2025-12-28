@@ -7,6 +7,8 @@ function World:on_start()
 	self.sky_texture = "resources/sprites/sky.jpg"
 	self.ground_texture = "resources/sprites/grass.jpg"
 
+	audio:play_music("resources/music/grasswalk.mp3")
+
 	-- Initialize Game Data
 	GameData.score = 0
 	GameData.wave = 1

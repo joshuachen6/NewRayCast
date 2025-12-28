@@ -172,6 +172,7 @@ void World::cleanup() {
   for (int i = 0; i < entities.size(); ++i) {
     if (entities[i]->deleted) {
       entities.erase(entities.begin() + i);
+      --i;
     }
   }
 }

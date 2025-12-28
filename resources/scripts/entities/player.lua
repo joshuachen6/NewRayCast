@@ -52,6 +52,8 @@ function Player:on_update(dt)
 		local bullet = game:get_world():spawn_entity("resources/scripts/entities/bullet.lua", spawn_loc)
 		local velocity = Vector2(math.cos(loc.z) * 1000, math.sin(loc.z) * 1000)
 		bullet.velocity = velocity
+
+		audio:play_sound("resources/sounds/pea_shoot.ogx")
 	end
 
 	cooldown = cooldown - dt

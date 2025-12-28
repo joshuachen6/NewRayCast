@@ -1,3 +1,4 @@
+#include "Audio.h"
 #include "Game.h"
 #include "Renderer.h"
 #include "World.h"
@@ -28,6 +29,7 @@ int main() {
   Renderer renderer(window);
 
   Controls::initLua(L);
+  Audio::initLua(L);
   Physics::initLua(L);
   Entity::initLua(L);
   World::initLua(L);
@@ -36,8 +38,10 @@ int main() {
 
   Game game(L, resourceFolder / "scripts" / "game.lua");
   Controls controls;
+  Audio audio;
 
   luabridge::setGlobal(L, &game, "game");
+  luabridge::setGlobal(L, &audio, "audio");
   luabridge::setGlobal(L, &controls, "controls");
 
   try {
