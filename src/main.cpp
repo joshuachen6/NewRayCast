@@ -35,8 +35,10 @@ int main() {
   Renderer::initLua(L);
 
   Game game(L, resourceFolder / "scripts" / "game.lua");
+  Controls controls;
 
   luabridge::setGlobal(L, &game, "game");
+  luabridge::setGlobal(L, &controls, "controls");
 
   try {
     if (game.onStart)
@@ -83,18 +85,20 @@ int main() {
     }
 
     if (focus) {
+      controls.update();
       game.update(dt);
       World *world = game.getWorld();
       if (world) {
         Physics::apply_physics(*world, dt);
         renderer.update(*world, world->camera, M_PI_2, 240, dt);
+        game.render(renderer);
         world->cleanup();
       } else {
         window.clear();
         renderer.drawText({0, 0}, resourceFolder / "fonts" / "font.ttf",
                           "No world loaded!", 100, {255, 255, 255, 255});
-        window.display();
       }
+      window.display();
     }
   }
 }

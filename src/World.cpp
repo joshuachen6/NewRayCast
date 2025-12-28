@@ -13,15 +13,13 @@ std::mutex texture_mutex;
 std::mutex model_mutex;
 std::mutex entity_mutex;
 
-World::World(lua_State *L, std::string script)
-    : onStart(L), onUpdate(L), onRender(L) {
+World::World(lua_State *L, std::string script) : onStart(L), onUpdate(L) {
 
   if (luaL_dofile(L, script.c_str()) == LUA_OK) {
     luabridge::LuaRef scriptTable = luabridge::LuaRef::fromStack(L, -1);
 
     onStart = scriptTable["on_start"];
     onUpdate = scriptTable["on_update"];
-    onRender = scriptTable["on_render"];
     lua_pop(L, 1);
   } else {
     spdlog::error("Failed to read script {}", script);

@@ -4,6 +4,7 @@ local cooldown = 0
 function Player:on_start()
 	self.mass = 100
 	self.radius = 5
+	self.health = 100
 
 	GameData.player = self
 end
@@ -14,18 +15,25 @@ function Player:on_update(dt)
 	local rotation_speed = (4 * math.pi / 7) * dt
 	local move_speed = 3.5 * 100 * dt
 
-	if key_pressed(Key.A) then
+	if self.health <= 0 then
+		GameData.game_over = true
+		game:get_world():destroy_entity(self)
+		GameData.player = nil
+		return
+	end
+
+	if controls:key_pressed(Key.A) then
 		loc.z = physics.scale_angle(loc.z + rotation_speed)
-	elseif key_pressed(Key.D) then
+	elseif controls:key_pressed(Key.D) then
 		loc.z = physics.scale_angle(loc.z - rotation_speed)
 	end
 
-	if key_pressed(Key.W) then
+	if controls:key_pressed(Key.W) then
 		if physics.mag(vel) < 200 then
 			vel.x = vel.x + math.cos(loc.z) * move_speed
 			vel.y = vel.y + math.sin(loc.z) * move_speed
 		end
-	elseif key_pressed(Key.S) then
+	elseif controls:key_pressed(Key.S) then
 		if physics.mag(vel) < 200 then
 			vel.x = vel.x - math.cos(loc.z) * move_speed
 			vel.y = vel.y - math.sin(loc.z) * move_speed
@@ -37,8 +45,8 @@ function Player:on_update(dt)
 
 	game:get_world().camera = loc
 
-	if key_pressed(Key.Space) and cooldown <= 0 then
-		cooldown = 1
+	if controls:key_pressed(Key.Space) and cooldown <= 0 then
+		cooldown = 0.5
 		local offset = self.radius + 10
 		local spawn_loc = Vector3(loc.x + math.cos(loc.z) * offset, loc.y + math.sin(loc.z) * offset, loc.z)
 		local bullet = game:get_world():spawn_entity("resources/scripts/entities/bullet.lua", spawn_loc)

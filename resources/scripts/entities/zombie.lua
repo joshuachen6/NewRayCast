@@ -42,6 +42,7 @@ end
 
 function Zombie:on_death()
 	game:get_world():spawn_entity("resources/scripts/entities/coin.lua", self.location)
+    GameData.score = GameData.score + 10
 end
 
 return Zombie
