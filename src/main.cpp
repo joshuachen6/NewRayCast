@@ -93,6 +93,7 @@ int main() {
       game.update(dt);
       World *world = game.getWorld();
       if (world) {
+        audio.setListener(world->camera);
         Physics::apply_physics(*world, dt);
         renderer.update(*world, world->camera, M_PI_2, 240, dt);
         game.render(renderer);
