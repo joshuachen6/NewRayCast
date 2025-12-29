@@ -22,9 +22,9 @@ function Player:on_update(dt)
 		return
 	end
 
-	if controls:key_pressed(Key.A) then
+	if controls:key_pressed(Key.Left) then
 		loc.z = physics.scale_angle(loc.z + rotation_speed)
-	elseif controls:key_pressed(Key.D) then
+	elseif controls:key_pressed(Key.Right) then
 		loc.z = physics.scale_angle(loc.z - rotation_speed)
 	end
 
@@ -39,6 +39,17 @@ function Player:on_update(dt)
 			vel.y = vel.y - math.sin(loc.z) * move_speed
 		end
 	end
+	if controls:key_pressed(Key.A) then
+		if physics.mag(vel) < 200 then
+			vel.x = vel.x - math.cos(loc.z - math.pi / 2) * move_speed
+			vel.y = vel.y - math.sin(loc.z - math.pi / 2) * move_speed
+		end
+	elseif controls:key_pressed(Key.D) then
+		if physics.mag(vel) < 200 then
+			vel.x = vel.x - math.cos(loc.z + math.pi / 2) * move_speed
+			vel.y = vel.y - math.sin(loc.z + math.pi / 2) * move_speed
+		end
+	end
 
 	self.location = loc
 	self.velocity = vel
@@ -46,7 +57,7 @@ function Player:on_update(dt)
 	game:get_world().camera = loc
 
 	if controls:key_pressed(Key.Space) and cooldown <= 0 then
-		cooldown = 0.5
+		cooldown = 0.1
 		local offset = self.radius + 10
 		local spawn_loc = Vector3(loc.x + math.cos(loc.z) * offset, loc.y + math.sin(loc.z) * offset, loc.z)
 		local bullet = game:get_world():spawn_entity("resources/scripts/entities/bullet.lua", spawn_loc)
