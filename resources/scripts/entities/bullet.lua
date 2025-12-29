@@ -8,17 +8,18 @@ function Bullet:on_start()
 end
 
 function Bullet:on_collide(other)
-    if other.script ~= "resources/scripts/entities/player.lua" then
-        game:get_world():destroy_entity(self)
-        other:damage(100)
-    end
+	if other.script ~= "resources/scripts/entities/player.lua" then
+		game:get_world():destroy_entity(self)
+		other:damage(100)
+		audio:play_sound_at("resources/sounds/pea_hit.ogx", physics.squash(self.location))
+	end
 end
 
 function Bullet:on_update(dt)
-    lifetime = lifetime + dt
-    if lifetime > 5 then
-        game:get_world():destroy_entity(self)
-    end
+	lifetime = lifetime + dt
+	if lifetime > 5 then
+		game:get_world():destroy_entity(self)
+	end
 end
 
 return Bullet

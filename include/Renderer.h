@@ -20,7 +20,7 @@ private:
   std::unordered_map<std::string, sf::Font> font_map;
   std::unordered_map<std::string, sf::Texture> texture_map;
 
-  sf::Shader noise_shader;
+  sf::Shader post_shader;
 
   void draw_minimap(World &world, sf::Vector3f &camera);
 
@@ -43,6 +43,8 @@ public:
   void drawCircle(sf::Vector2f position, int radius, sf::Color color);
   void drawText(sf::Vector2f position, std::string font, std::string text,
                 int size, sf::Color color);
+  void drawTextWrapped(sf::Vector2f position, std::string font,
+                       std::string text, int size, sf::Color color, int width);
   void drawSprite(sf::Vector2f position, sf::Vector2f size, std::string sprite);
 
   sf::Texture *load_texture(std::string texture);

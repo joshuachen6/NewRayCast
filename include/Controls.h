@@ -1,11 +1,15 @@
-#include "SFML/Window/Keyboard.hpp"
-
 #include <lua.hpp>
 
 #include <LuaBridge/LuaBridge.h>
 
-namespace Controls {
-bool keyPressed(int key);
+class Controls {
+private:
+  std::unordered_map<int, bool> pressed;
 
-void initLua(lua_State *L);
-} // namespace Controls
+public:
+  bool keyPressed(int key);
+  bool keyJustPressed(int key);
+  void update();
+
+  static void initLua(lua_State *L);
+};

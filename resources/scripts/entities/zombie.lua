@@ -1,5 +1,6 @@
 local Zombie = {}
 local cooldown = 0
+local soundCooldown = 0
 
 function Zombie:on_start()
 	self.mass = 100
@@ -11,6 +12,17 @@ end
 function Zombie:on_update(dt)
 	if cooldown > 0 then
 		cooldown = cooldown - dt
+	end
+
+	if soundCooldown > 0 then
+		soundCooldown = soundCooldown - dt
+	end
+
+	if soundCooldown <= 0 then
+		if math.random() > 0.5 then
+			audio:play_sound_at("resources/sounds/zombie.ogx", physics.squash(self.location))
+		end
+		soundCooldown = 2
 	end
 
 	if GameData.player then
@@ -27,9 +39,12 @@ function Zombie:on_update(dt)
 end
 
 function Zombie:on_collide(other)
-	if cooldown <= 0 then
-		other:damage(10)
-		cooldown = 1
+	if other.script == "resources/scripts/entities/player.lua" then
+		if cooldown <= 0 then
+			other:damage(10)
+			cooldown = 1
+			audio:play_sound("resources/sounds/eat.ogx")
+		end
 	end
 end
 
@@ -42,6 +57,7 @@ end
 
 function Zombie:on_death()
 	game:get_world():spawn_entity("resources/scripts/entities/coin.lua", self.location)
+	GameData.score = GameData.score + 10
 end
 
 return Zombie

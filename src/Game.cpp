@@ -1,10 +1,11 @@
 #include "Game.h"
 #include "LuaBridge/detail/Namespace.h"
+#include "Renderer.h"
 #include <memory>
 #include <spdlog/spdlog.h>
 
 Game::Game(lua_State *L, std::string script)
-    : onUpdate(L), onStart(L), onWorldSwitch(L) {
+    : onUpdate(L), onStart(L), onWorldSwitch(L), onRender(L) {
 
   if (luaL_dofile(L, script.c_str()) == LUA_OK) {
     luabridge::LuaRef scriptTable = luabridge::LuaRef::fromStack(L, -1);
@@ -12,6 +13,8 @@ Game::Game(lua_State *L, std::string script)
     onStart = scriptTable["on_start"];
     onUpdate = scriptTable["on_update"];
     onWorldSwitch = scriptTable["on_world_switch"];
+    onRender = scriptTable["on_render"];
+
     lua_pop(L, 1);
   } else {
     spdlog::error("Failed to read script {}", script);
@@ -66,6 +69,16 @@ void Game::update(double dt) {
   }
   if (getWorld()) {
     getWorld()->update(dt);
+  }
+}
+
+void Game::render(Renderer &renderer) {
+  try {
+    if (onRender) {
+      onRender(this, &renderer);
+    }
+  } catch (const luabridge::LuaException &e) {
+    spdlog::error("Luabridge execption on render {}", e.what());
   }
 }
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "Renderer.h"
 #include "World.h"
 
 #include <lua.h>
@@ -19,6 +20,7 @@ public:
   luabridge::LuaRef onUpdate;
   luabridge::LuaRef onStart;
   luabridge::LuaRef onWorldSwitch;
+  luabridge::LuaRef onRender;
 
   Game(lua_State *L, std::string script);
 
@@ -26,6 +28,7 @@ public:
   void reset_world(std::string world);
   World *getWorld();
   void update(double dt);
+  void render(Renderer &renderer);
 
   static void initLua(lua_State *L);
 };

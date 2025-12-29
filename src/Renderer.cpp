@@ -13,6 +13,7 @@
 #include <format>
 #include <memory>
 #include <spdlog/spdlog.h>
+#include <sstream>
 
 sf::Sprite *Renderer::get_column(sf::Texture *texture, const Vertex &vertex,
                                  sf::Vector2f &collision, int cols) {
@@ -114,8 +115,7 @@ Renderer::Renderer(sf::RenderWindow &window) {
   this->window = &window;
   render_texture.create(window.getSize().x, window.getSize().y);
   std::filesystem::path resourceFolder("resources");
-  noise_shader.loadFromFile(resourceFolder / "noise.glsl",
-                            sf::Shader::Fragment);
+  post_shader.loadFromFile(resourceFolder / "post.glsl", sf::Shader::Fragment);
   debug = false;
   show_minimap = true;
 }
@@ -211,9 +211,8 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
   }
 
   render_texture.display();
-  noise_shader.setUniform("time", float(dt));
-  noise_shader.setUniform("scale", 0.1f);
-  noise_shader.setUniform(
+  post_shader.setUniform("time", float(dt));
+  post_shader.setUniform(
       "resolution", sf::Vector2f(window->getSize().x, window->getSize().y));
 
   window->clear();
@@ -221,7 +220,7 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
   scene.setTexture(render_texture.getTexture());
   scene.setScale(double(window->getSize().x) / scene.getTexture()->getSize().x,
                  double(window->getSize().y) / scene.getTexture()->getSize().y);
-  window->draw(scene, &noise_shader);
+  window->draw(scene, &post_shader);
 
   // draw hud here so its not noised
   if (show_minimap) {
@@ -259,16 +258,6 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
     fps.setPosition(0, 88);
     window->draw(fps);
   }
-
-  try {
-    if (world.onRender) {
-      world.onRender(&world, this);
-    }
-  } catch (const luabridge::LuaException &e) {
-    spdlog::error("Luabridge execption on render {}", e.what());
-  }
-
-  window->display();
 }
 
 sf::Font &Renderer::getFont(std::string font) {
@@ -294,16 +283,41 @@ void Renderer::drawCircle(sf::Vector2f position, int radius, sf::Color color) {
   window->draw(circle);
 }
 
-void Renderer::drawText(sf::Vector2f position, std::string fontPath,
-                        std::string textStr, int size, sf::Color color) {
+void Renderer::drawText(sf::Vector2f position, std::string font,
+                        std::string text, int size, sf::Color color) {
 
-  sf::Text text;
-  text.setFont(getFont(fontPath));
-  text.setString(textStr);
-  text.setCharacterSize(size);
-  text.setFillColor(color);
-  text.setPosition(position);
-  window->draw(text);
+  sf::Text textObject;
+  textObject.setFont(getFont(font));
+  textObject.setString(text);
+  textObject.setCharacterSize(size);
+  textObject.setFillColor(color);
+  textObject.setPosition(position);
+  window->draw(textObject);
+}
+
+void Renderer::drawTextWrapped(sf::Vector2f position, std::string font,
+                               std::string text, int size, sf::Color color,
+                               int width) {
+  sf::Text textObject;
+  textObject.setFont(getFont(font));
+  textObject.setFillColor(color);
+  textObject.setCharacterSize(size);
+
+  std::istringstream stream(text);
+  std::string word;
+  std::string current;
+
+  while (stream >> word) {
+    std::string test = current + word + ' ';
+    textObject.setString(test);
+    if (textObject.getGlobalBounds().getSize().x > width) {
+      current += '\n';
+    }
+    current += word + ' ';
+  }
+  textObject.setString(current);
+
+  window->draw(textObject);
 }
 
 void Renderer::drawSprite(sf::Vector2f position, sf::Vector2f size,
@@ -349,6 +363,7 @@ void Renderer::initLua(lua_State *L) {
       .addFunction("draw_rectangle", &Renderer::drawRectangle)
       .addFunction("draw_circle", &Renderer::drawCircle)
       .addFunction("draw_text", &Renderer::drawText)
+      .addFunction("draw_text_wrapped", &Renderer::drawTextWrapped)
       .addFunction("get_size", &Renderer::getSize)
       .addFunction("draw_sprite", &Renderer::drawSprite)
       .endClass();
