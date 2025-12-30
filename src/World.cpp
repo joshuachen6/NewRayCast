@@ -142,8 +142,8 @@ void World::interact(Entity &entity, double distance) {
 }
 
 void World::destroyEntity(Entity &entity) {
-  entity.deleted = true;
   entity.onDeath(&entity);
+  entity.deleted = true;
 }
 
 void World::update(double dt) {

@@ -6,6 +6,9 @@ function Player:on_start()
 	self.radius = 5
 	self.health = 100
 
+	self:add_tag("player")
+	self.id = "player"
+
 	GameData.player = self
 end
 

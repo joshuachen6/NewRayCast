@@ -6,6 +6,10 @@ function Zombie:on_start()
 	self.mass = 100
 	self.radius = 20
 	self.model = "resources/models/zombie.csv"
+
+	self:add_tag("zombie")
+	self.id = "zombie"
+
 	cooldown = 0
 end
 
@@ -39,11 +43,13 @@ function Zombie:on_update(dt)
 end
 
 function Zombie:on_collide(other)
-	if other.script == "resources/scripts/entities/player.lua" then
-		if cooldown <= 0 then
-			other:damage(10)
-			cooldown = 1
-			audio:play_sound("resources/sounds/eat.ogx")
+	if other then
+		if other:has_tag("player") then
+			if cooldown <= 0 then
+				other:damage(10)
+				cooldown = 1
+				audio:play_sound("resources/sounds/eat.ogx")
+			end
 		end
 	end
 end

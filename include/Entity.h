@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <unordered_set>
 
 #include <lua.hpp>
 
@@ -9,6 +10,8 @@ class Entity {
 public:
   std::string model;
   std::string script;
+  std::string id;
+  std::unordered_set<std::string> tags;
   sf::Vector3f location;
   sf::Vector2f velocity;
   sf::Vector2f acceleration;
@@ -16,6 +19,7 @@ public:
   double radius = 1.0;
   double health = 100.0;
   bool is_static = false;
+  bool has_collision = true;
   bool deleted = false;
 
   luabridge::LuaRef onStart;
@@ -28,6 +32,8 @@ public:
   Entity(lua_State *L, const std::string &script,
          sf::Vector3f location = sf::Vector3f());
 
+  void addTag(std::string tag);
+  bool hasTag(std::string tag);
   void damage(float damage);
   void update(double dt);
 
