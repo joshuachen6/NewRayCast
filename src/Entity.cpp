@@ -24,6 +24,10 @@ Entity::Entity(lua_State *L, const std::string &script, sf::Vector3f location)
   }
 }
 
+void Entity::addTag(std::string tag) { tags.insert(tag); }
+
+bool Entity::hasTag(std::string tag) { return this->tags.contains(tag); }
+
 void Entity::damage(float damage) {
   try {
     if (onDamage) {
@@ -49,13 +53,18 @@ void Entity::initLua(lua_State *L) {
       .beginClass<Entity>("Entity")
       .addProperty("model", &Entity::model)
       .addProperty("script", &Entity::script)
+      .addProperty("id", &Entity::id)
       .addProperty("location", &Entity::location)
       .addProperty("velocity", &Entity::velocity)
       .addProperty("acceleration", &Entity::acceleration)
       .addProperty("mass", &Entity::mass)
       .addProperty("radius", &Entity::radius)
       .addProperty("health", &Entity::health)
+      .addProperty("deleted", &Entity::deleted)
       .addProperty("is_static", &Entity::is_static)
+      .addProperty("has_collision", &Entity::has_collision)
       .addFunction("damage", &Entity::damage)
+      .addFunction("add_tag", &Entity::addTag)
+      .addFunction("has_tag", &Entity::hasTag)
       .endClass();
 }

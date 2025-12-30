@@ -8,10 +8,14 @@ function Bullet:on_start()
 end
 
 function Bullet:on_collide(other)
-	if other.script ~= "resources/scripts/entities/player.lua" then
-		game:get_world():destroy_entity(self)
+	if not other then
+		game:get_world():destroy_entity(self) -- DESTROY LAST
+		return
+	end
+	if not other:has_tag("player") and other.has_collision then
 		other:damage(100)
 		audio:play_sound_at("resources/sounds/pea_hit.ogx", physics.squash(self.location))
+		game:get_world():destroy_entity(self) -- DESTROY LAST
 	end
 end
 

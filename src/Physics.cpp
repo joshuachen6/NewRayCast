@@ -6,6 +6,7 @@
 #include <math.h>
 #include <memory>
 #include <set>
+#include <spdlog/spdlog.h>
 
 std::vector<CastResult>
 Physics::cast_ray(World &world, const sf::Vector3f &source, double angle) {
@@ -119,6 +120,16 @@ void Physics::apply_physics(World &world, double dt) {
           squash(other.location) - squash(entity.location);
       double distance = mag(distance_vector);
       if (distance < entity.radius + other.radius) {
+        // Collision event
+        if (entity.onCollide.isFunction())
+          entity.onCollide(&entity, &other);
+        if (other.onCollide.isFunction())
+          other.onCollide(&other, &entity);
+
+        if (not entity.has_collision or not other.has_collision) {
+          continue;
+        }
+
         sf::Vector2f normalized_dist = normalize(distance_vector);
 
         if (dot(distance_vector, entity.velocity - other.velocity) > 0) {
@@ -152,12 +163,6 @@ void Physics::apply_physics(World &world, double dt) {
           entity.location.x += offset.x;
           entity.location.y += offset.y;
         }
-
-        // Collision event
-        if (entity.onCollide.isFunction())
-          entity.onCollide(&entity, &other);
-        if (other.onCollide.isFunction())
-          other.onCollide(&other, &entity);
       }
     }
 
@@ -172,7 +177,8 @@ void Physics::apply_physics(World &world, double dt) {
       CastResult &result = potential_hits[0];
       int i = 0;
       while (whitelist.contains({result.index, result.owner}) or
-             result.owner == &entity) {
+             result.owner == &entity or
+             (result.owner and not result.owner->has_collision)) {
         i++;
         if (i >= potential_hits.size()) {
           valid = false;
@@ -185,7 +191,15 @@ void Physics::apply_physics(World &world, double dt) {
         break;
       }
 
-      if (result.distance > mag(entity.velocity)) {
+      if (result.distance > mag(entity.velocity) * dt) {
+        break;
+      }
+
+      if (not result.owner and entity.onCollide) {
+        entity.onCollide(&entity);
+      }
+
+      if (not entity.has_collision) {
         break;
       }
 
