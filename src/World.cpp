@@ -12,6 +12,7 @@
 std::mutex texture_mutex;
 std::mutex model_mutex;
 std::mutex entity_mutex;
+std::mutex scene_mutex;
 
 World::World(lua_State *L, std::string script) : onStart(L), onUpdate(L) {
 
@@ -44,12 +45,12 @@ sf::Texture *World::load_texture(std::string texture) {
 const std::vector<Vertex> &World::load_model(std::string model) {
   std::lock_guard<std::mutex> lock(model_mutex);
   if (model.empty()) {
-    if (!model_map.contains("")) {
+    if (not model_map.contains("")) {
       model_map[""] = std::vector<Vertex>();
     }
     return model_map[""];
   }
-  if (!model_map.contains(model)) {
+  if (not model_map.contains(model)) {
     rapidcsv::Document document(model);
     std::vector<Vertex> vertices;
     vertices.reserve(document.GetRowCount());
@@ -61,7 +62,7 @@ const std::vector<Vertex> &World::load_model(std::string model) {
     int zIdx = document.GetColumnIdx("z");
     int modelIdx = document.GetColumnIdx("model");
 
-    if (x1Idx == -1 || y1Idx == -1 || x2Idx == -1 || y2Idx == -1) {
+    if (x1Idx == -1 or y1Idx == -1 or x2Idx == -1 or y2Idx == -1) {
       spdlog::error("Failed to find required columns in model {}", model);
       model_map[model] = std::vector<Vertex>();
       return model_map[model];
@@ -123,6 +124,39 @@ Entity *World::spawn_entity(std::string entity, sf::Vector3f position) {
 
   spdlog::error("Could not locate entity {}", entity);
   return nullptr;
+}
+
+void World::spawn_scene(std::string scene, sf::Vector3f position) {
+  std::lock_guard<std::mutex> lock(scene_mutex);
+  if (scene.empty()) {
+    return;
+  }
+  rapidcsv::Document document(scene);
+  int xIdx = document.GetColumnIdx("x");
+  int yIdx = document.GetColumnIdx("y");
+  int zIdx = document.GetColumnIdx("z");
+  int entityIdx = document.GetColumnIdx("entity");
+
+  if (xIdx == -1 or yIdx == -1 or entityIdx == -1) {
+    spdlog::error("Failed to find required columns for scene {}", scene);
+    return;
+  }
+
+  spdlog::info("Loading scene {}: {} entities", scene, document.GetRowCount());
+
+  for (int i = 0; i < document.GetRowCount(); ++i) {
+    float x = document.GetCell<float>(xIdx, i);
+    float y = document.GetCell<float>(yIdx, i);
+    float z = document.GetCell<float>(zIdx, i);
+
+    std::string entity = document.GetCell<std::string>(entityIdx, i);
+
+    x = x * cos(position.z) - y * sin(position.z);
+    y = x * sin(position.z) + y * cos(position.z);
+    z += position.z;
+
+    spawn_entity(entity, {x, y, z});
+  }
 }
 
 void World::interact(Entity &entity, double distance) {
@@ -189,6 +223,7 @@ void World::initLua(lua_State *L) {
       .addFunction("vertex_from_model", &World::vertex_from_model)
       .addFunction("spawn_model", &World::spawn_model)
       .addFunction("spawn_entity", &World::spawn_entity)
+      .addFunction("spawn_scene", &World::spawn_scene)
       .addFunction("interact", &World::interact)
       .addFunction("destroy_entity", &World::destroyEntity)
       .endClass();

@@ -40,6 +40,7 @@ public:
 
   void spawn_model(std::string model, sf::Vector3f position);
   Entity *spawn_entity(std::string entity, sf::Vector3f position);
+  void spawn_scene(std::string scene, sf::Vector3f positione);
 
   void interact(Entity &entity, double distance);
   void destroyEntity(Entity &entity);
