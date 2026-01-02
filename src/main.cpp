@@ -54,7 +54,7 @@ int main() {
   std::chrono::time_point<std::chrono::system_clock> last =
       std::chrono::system_clock::now();
 
-  while (window.isOpen()) {
+  while (window.isOpen() and game.running) {
 
     double dt = std::chrono::duration_cast<std::chrono::nanoseconds>(
                     std::chrono::system_clock::now() - last)

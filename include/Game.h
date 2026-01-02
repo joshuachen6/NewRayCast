@@ -22,6 +22,8 @@ public:
   luabridge::LuaRef onWorldSwitch;
   luabridge::LuaRef onRender;
 
+  bool running = true;
+
   Game(lua_State *L, std::string script);
 
   void switch_world(std::string world);

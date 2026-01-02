@@ -222,6 +222,11 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
                  double(window->getSize().y) / scene.getTexture()->getSize().y);
   window->draw(scene, &post_shader);
 
+  // Apply the darkness (brightness)
+  sf::Color color(0, 0, 0, 255 - world.brightness);
+  drawRectangle({0, 0}, sf::Vector2f(window->getSize().x, window->getSize().y),
+                color);
+
   // draw hud here so its not noised
   if (show_minimap) {
     draw_minimap(world, camera);

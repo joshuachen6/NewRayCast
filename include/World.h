@@ -24,8 +24,10 @@ public:
   std::vector<std::unique_ptr<Vertex>> vertices;
   std::vector<std::unique_ptr<Entity>> entities;
 
-  double friction;
-  double gravity;
+  int brightness = 255;
+
+  double friction = 2;
+  double gravity = 1;
   std::string sky_texture;
   std::string ground_texture;
 
@@ -40,6 +42,7 @@ public:
 
   void spawn_model(std::string model, sf::Vector3f position);
   Entity *spawn_entity(std::string entity, sf::Vector3f position);
+  void spawn_scene(std::string scene, sf::Vector3f positione);
 
   void interact(Entity &entity, double distance);
   void destroyEntity(Entity &entity);
