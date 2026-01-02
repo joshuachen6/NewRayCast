@@ -85,6 +85,7 @@ void Game::render(Renderer &renderer) {
 void Game::initLua(lua_State *L) {
   luabridge::getGlobalNamespace(L)
       .beginClass<Game>("Game")
+      .addProperty("running", &Game::running)
       .addFunction("get_world", &Game::getWorld)
       .addFunction("switch_world", &Game::switch_world)
       .addFunction("reset_world", &Game::reset_world)

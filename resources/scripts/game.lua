@@ -44,7 +44,7 @@ function Game:on_render(renderer)
 		Vector2(0, 0),
 		font,
 		"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-		screen_size.y / 20,
+		screen_size.y / 30,
 		green,
 		screen_size.x
 	)
@@ -57,6 +57,10 @@ function Game:on_render(renderer)
 			screen_size.y / 10,
 			red
 		)
+
+		if controls:key_triggered(Key.Escape) then
+			self.running = false
+		end
 	end
 end
 
