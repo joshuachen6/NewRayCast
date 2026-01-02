@@ -216,6 +216,7 @@ void World::initLua(lua_State *L) {
       .beginClass<World>("World")
       .addProperty("friction", &World::friction)
       .addProperty("gravity", &World::gravity)
+      .addProperty("brightness", &World::brightness)
       .addProperty("sky_texture", &World::sky_texture)
       .addProperty("ground_texture", &World::ground_texture)
       .addProperty("camera", &World::camera)

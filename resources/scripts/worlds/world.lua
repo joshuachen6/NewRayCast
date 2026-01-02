@@ -1,9 +1,6 @@
 local World = {}
 
 function World:on_start()
-	self.friction = 2
-	self.gravity = 1
-
 	self.sky_texture = "resources/sprites/sky.jpg"
 	self.ground_texture = "resources/sprites/grass.jpg"
 

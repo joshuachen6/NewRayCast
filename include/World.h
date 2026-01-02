@@ -24,8 +24,10 @@ public:
   std::vector<std::unique_ptr<Vertex>> vertices;
   std::vector<std::unique_ptr<Entity>> entities;
 
-  double friction;
-  double gravity;
+  int brightness = 255;
+
+  double friction = 2;
+  double gravity = 1;
   std::string sky_texture;
   std::string ground_texture;
 
