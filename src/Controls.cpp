@@ -1,6 +1,7 @@
 #include "Controls.h"
 #include "LuaBridge/detail/LuaRef.h"
 #include "SFML/Window/Keyboard.hpp"
+#include <spdlog/spdlog.h>
 #include <unordered_map>
 
 std::unordered_map<std::string, int> keys = {

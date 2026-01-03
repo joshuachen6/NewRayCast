@@ -71,6 +71,11 @@ function Player:on_update(dt)
 	end
 
 	cooldown = cooldown - dt
+
+	if controls:key_triggered(Key.E) then
+		print("Interact Triggered")
+		game:get_world():interact(self, 200)
+	end
 end
 
 function Player:on_damage(damage)

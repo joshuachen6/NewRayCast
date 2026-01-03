@@ -89,8 +89,8 @@ int main() {
     }
 
     if (focus) {
-      controls.update();
       game.update(dt);
+      controls.update();
       World *world = game.getWorld();
       if (world) {
         audio.setListener(world->camera);

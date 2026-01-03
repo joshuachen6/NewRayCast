@@ -165,10 +165,9 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
             if (closest.owner and closest.owner->location == camera) {
               continue;
             }
-            const Vertex &temp =
-                closest.owner
-                    ? world.load_model(closest.owner->model)[closest.index]
-                    : *world.vertices[closest.index];
+            const Vertex &temp = closest.owner
+                                     ? closest.owner->vertecies[closest.index]
+                                     : *world.vertices[closest.index];
 
             Vertex vertex =
                 closest.owner ? temp.translated(closest.ownerLocation) : temp;

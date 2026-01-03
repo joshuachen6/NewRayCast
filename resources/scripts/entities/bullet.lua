@@ -4,7 +4,7 @@ local lifetime = 0
 function Bullet:on_start()
 	self.mass = 1
 	self.radius = 5
-	self.model = "resources/models/bullet.csv"
+	self:set_model("resources/models/bullet.csv")
 end
 
 function Bullet:on_collide(other)

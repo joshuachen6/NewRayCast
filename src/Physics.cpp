@@ -8,12 +8,19 @@
 #include <set>
 #include <spdlog/spdlog.h>
 
+double MAX_RENDER_DIST = 500 * METER;
+
 std::vector<CastResult>
 Physics::cast_ray(World &world, const sf::Vector3f &source, double angle) {
   std::vector<CastResult> hits;
 
   for (int i = 0; i < world.vertices.size(); ++i) {
     std::unique_ptr<Vertex> &vertex = world.vertices[i];
+
+    if (Physics::distance(Physics::squash(source), vertex->start) >
+        MAX_RENDER_DIST) {
+      continue;
+    }
     sf::Vector2f hit;
     if (hits_vertex(*vertex, hit, source, angle)) {
       double distance =
@@ -27,7 +34,7 @@ Physics::cast_ray(World &world, const sf::Vector3f &source, double angle) {
     if (entity->model.empty())
       continue;
     sf::Vector2f hit;
-    const std::vector<Vertex> &vertices = world.load_model(entity->model);
+    const std::vector<Vertex> &vertices = entity->vertecies;
     for (int i = 0; i < vertices.size(); ++i) {
       const Vertex &vertex = vertices[i];
       Vertex temp = vertex.translated(entity->location);
@@ -203,9 +210,8 @@ void Physics::apply_physics(World &world, double dt) {
         break;
       }
 
-      const Vertex &temp =
-          result.owner ? world.load_model(result.owner->model)[result.index]
-                       : *world.vertices[result.index];
+      const Vertex &temp = result.owner ? result.owner->vertecies[result.index]
+                                        : *world.vertices[result.index];
 
       Vertex vertex =
           result.owner ? temp.translated(result.ownerLocation) : temp;
