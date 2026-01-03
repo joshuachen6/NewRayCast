@@ -1,7 +1,7 @@
 local Coin = {}
 
 function Coin:on_start()
-	self.model = "resources/models/coin.csv"
+	self:set_model("resources/models/coin.csv")
 	self.radius = 10
 	self.mass = 1
 	self.is_static = true

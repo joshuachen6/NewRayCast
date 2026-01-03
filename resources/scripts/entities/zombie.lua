@@ -5,7 +5,7 @@ local soundCooldown = 0
 function Zombie:on_start()
 	self.mass = 100
 	self.radius = 20
-	self.model = "resources/models/zombie.csv"
+	self:set_model("resources/models/zombie.csv")
 
 	self:add_tag("zombie")
 	self.id = "zombie"

@@ -1,4 +1,5 @@
 #include "Physics.h"
+#include "SFML/System/Vector2.hpp"
 #include "SFML/System/Vector3.hpp"
 #include <LuaBridge/LuaBridge.h>
 #include <lua.h>
@@ -8,18 +9,24 @@
 #include <set>
 #include <spdlog/spdlog.h>
 
-std::vector<CastResult>
-Physics::cast_ray(World &world, const sf::Vector3f &source, double angle) {
+double MAX_RENDER_DIST = 500 * METER;
+
+std::vector<CastResult> Physics::cast_ray(World &world, const sf::Vector3f &source, double angle) {
+  double slope = tan(angle);
+  sf::Vector2f lvector(cos(angle), sin(angle));
+
   std::vector<CastResult> hits;
 
   for (int i = 0; i < world.vertices.size(); ++i) {
     std::unique_ptr<Vertex> &vertex = world.vertices[i];
+
+    if (Physics::distance(Physics::squash(source), vertex->start) > MAX_RENDER_DIST) {
+      continue;
+    }
     sf::Vector2f hit;
-    if (hits_vertex(*vertex, hit, source, angle)) {
-      double distance =
-          sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
-      hits.push_back(
-          CastResult(i, nullptr, sf::Vector2f(hit.x, hit.y), {}, distance));
+    if (hits_vertex(*vertex, hit, source, slope, lvector)) {
+      double distance = sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
+      hits.push_back(CastResult(i, nullptr, sf::Vector2f(hit.x, hit.y), {}, distance));
     }
   }
 
@@ -27,21 +34,18 @@ Physics::cast_ray(World &world, const sf::Vector3f &source, double angle) {
     if (entity->model.empty())
       continue;
     sf::Vector2f hit;
-    const std::vector<Vertex> &vertices = world.load_model(entity->model);
+    const std::vector<Vertex> &vertices = entity->vertecies;
     for (int i = 0; i < vertices.size(); ++i) {
       const Vertex &vertex = vertices[i];
       Vertex temp = vertex.translated(entity->location);
-      if (hits_vertex(temp, hit, source, angle)) {
-        double distance =
-            sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
-        hits.push_back(CastResult(i, entity.get(), sf::Vector2f(hit.x, hit.y),
-                                  entity->location, distance));
+      if (hits_vertex(temp, hit, source, slope, lvector)) {
+        double distance = sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
+        hits.push_back(CastResult(i, entity.get(), sf::Vector2f(hit.x, hit.y), entity->location, distance));
       }
     }
   }
 
-  sort(hits.begin(), hits.end(),
-       [](CastResult a, CastResult b) { return a.distance < b.distance; });
+  sort(hits.begin(), hits.end(), [](CastResult a, CastResult b) { return a.distance < b.distance; });
 
   return hits;
 }
@@ -57,14 +61,11 @@ double Physics::scale_angle(double radians) {
   return radians;
 }
 
-bool Physics::hits_vertex(Vertex &vertex, sf::Vector2f &point,
-                          const sf::Vector3f &source, double angle) {
-  double slope = tan(angle);
+bool Physics::hits_vertex(Vertex &vertex, sf::Vector2f &point, const sf::Vector3f &source, double slope, sf::Vector2f lvector) {
   double b = source.y - source.x * slope;
   double cx, cy;
   if (vertex.start.x != vertex.end.x) {
-    double vslope =
-        (vertex.end.y - vertex.start.y) / (vertex.end.x - vertex.start.x);
+    double vslope = (vertex.end.y - vertex.start.y) / (vertex.end.x - vertex.start.x);
     bool collides = (slope - vslope) != 0;
     if (!collides) {
       return false;
@@ -77,17 +78,15 @@ bool Physics::hits_vertex(Vertex &vertex, sf::Vector2f &point,
     cx = vertex.start.x;
   }
 
-  bool yrange = (cy - std::min(vertex.start.y, vertex.end.y)) > -0.5 &&
-                (cy - std::max(vertex.start.y, vertex.end.y)) < 1;
-  bool xrange = (cx - std::min(vertex.start.x, vertex.end.x)) > -0.5 &&
-                (cx - std::max(vertex.start.x, vertex.end.x)) < 1;
+  bool yrange = (cy - std::min(vertex.start.y, vertex.end.y)) > -0.5 && (cy - std::max(vertex.start.y, vertex.end.y)) < 1;
+  bool xrange = (cx - std::min(vertex.start.x, vertex.end.x)) > -0.5 && (cx - std::max(vertex.start.x, vertex.end.x)) < 1;
 
   if (!(yrange && xrange)) {
     return false;
   }
 
-  if (std::abs(scale_angle(
-          (atan2((cy - source.y), (cx - source.x)) - source.z))) >= M_PI_2) {
+  sf::Vector2f dvector(cx - source.x, cy - source.y);
+  if (dot(dvector, lvector) < 0) {
     return false;
   }
 
@@ -98,14 +97,11 @@ bool Physics::hits_vertex(Vertex &vertex, sf::Vector2f &point,
 }
 
 void Physics::apply_physics(World &world, double dt) {
-  for (int entity_index = 0; entity_index < world.entities.size();
-       entity_index++) {
+  for (int entity_index = 0; entity_index < world.entities.size(); entity_index++) {
     Entity &entity = *world.entities[entity_index];
     entity.velocity += scale(entity.acceleration, dt);
 
-    sf::Vector2f friction =
-        scale(normalize(entity.velocity),
-              world.friction * entity.mass * world.gravity * dt);
+    sf::Vector2f friction = scale(normalize(entity.velocity), world.friction * entity.mass * world.gravity * dt);
     if (mag(friction) > mag(entity.velocity)) {
       entity.velocity = sf::Vector2f();
     } else {
@@ -113,11 +109,9 @@ void Physics::apply_physics(World &world, double dt) {
     }
 
     // momentum
-    for (int other_index = entity_index + 1;
-         other_index < world.entities.size(); other_index++) {
+    for (int other_index = entity_index + 1; other_index < world.entities.size(); other_index++) {
       Entity &other = *world.entities[other_index];
-      sf::Vector2f distance_vector =
-          squash(other.location) - squash(entity.location);
+      sf::Vector2f distance_vector = squash(other.location) - squash(entity.location);
       double distance = mag(distance_vector);
       if (distance < entity.radius + other.radius) {
         // Collision event
@@ -133,14 +127,10 @@ void Physics::apply_physics(World &world, double dt) {
         sf::Vector2f normalized_dist = normalize(distance_vector);
 
         if (dot(distance_vector, entity.velocity - other.velocity) > 0) {
-          sf::Vector2f entity_normal =
-              project(entity.velocity, normalized_dist);
+          sf::Vector2f entity_normal = project(entity.velocity, normalized_dist);
           sf::Vector2f other_normal = project(other.velocity, normalized_dist);
-          double new_velocity = (mag(entity_normal) * entity.mass +
-                                 mag(other_normal) * other.mass) /
-                                (entity.mass + other.mass);
-          sf::Vector2f new_normal =
-              scale(normalize(distance_vector), new_velocity);
+          double new_velocity = (mag(entity_normal) * entity.mass + mag(other_normal) * other.mass) / (entity.mass + other.mass);
+          sf::Vector2f new_normal = scale(normalize(distance_vector), new_velocity);
 
           entity.velocity -= entity_normal;
           other.velocity -= other_normal;
@@ -151,8 +141,7 @@ void Physics::apply_physics(World &world, double dt) {
           }
         }
 
-        sf::Vector2f offset =
-            scale(normalized_dist, distance - (entity.radius + other.radius));
+        sf::Vector2f offset = scale(normalized_dist, distance - (entity.radius + other.radius));
 
         if (!other.is_static) {
           entity.location.x += offset.x / 2;
@@ -176,9 +165,7 @@ void Physics::apply_physics(World &world, double dt) {
       bool valid = true;
       CastResult &result = potential_hits[0];
       int i = 0;
-      while (whitelist.contains({result.index, result.owner}) or
-             result.owner == &entity or
-             (result.owner and not result.owner->has_collision)) {
+      while (whitelist.contains({result.index, result.owner}) or result.owner == &entity or (result.owner and not result.owner->has_collision)) {
         i++;
         if (i >= potential_hits.size()) {
           valid = false;
@@ -203,22 +190,15 @@ void Physics::apply_physics(World &world, double dt) {
         break;
       }
 
-      const Vertex &temp =
-          result.owner ? world.load_model(result.owner->model)[result.index]
-                       : *world.vertices[result.index];
+      const Vertex &temp = result.owner ? result.owner->vertecies[result.index] : *world.vertices[result.index];
 
-      Vertex vertex =
-          result.owner ? temp.translated(result.ownerLocation) : temp;
+      Vertex vertex = result.owner ? temp.translated(result.ownerLocation) : temp;
 
       sf::Vector2f wall_tangent = normalize(vertex.start - vertex.end);
       sf::Vector2f wall_normal = sf::Vector2f(-wall_tangent.y, wall_tangent.x);
-      sf::Vector2f dist_vector =
-          sf::Vector2f(result.point.x - entity.location.x,
-                       result.point.y - entity.location.y);
+      sf::Vector2f dist_vector = sf::Vector2f(result.point.x - entity.location.x, result.point.y - entity.location.y);
       sf::Vector2f projected_dist_vector = project(dist_vector, wall_normal);
-      sf::Vector2f scaled_dist_vector =
-          scale(normalize(projected_dist_vector),
-                std::fmax(0, mag(projected_dist_vector) - entity.radius));
+      sf::Vector2f scaled_dist_vector = scale(normalize(projected_dist_vector), std::fmax(0, mag(projected_dist_vector) - entity.radius));
 
       sf::Vector2f tangent_velocity = project(entity.velocity, wall_tangent);
       sf::Vector2f normal_velocity = project(entity.velocity, wall_normal);
@@ -227,9 +207,7 @@ void Physics::apply_physics(World &world, double dt) {
 
       if (mag(scale(normal_velocity, dt)) >= normal_distance) {
         if (entity.radius >= normal_distance) {
-          scaled_dist_vector =
-              scale(normalize(projected_dist_vector),
-                    mag(projected_dist_vector) - entity.radius);
+          scaled_dist_vector = scale(normalize(projected_dist_vector), mag(projected_dist_vector) - entity.radius);
         }
         entity.location.x += scaled_dist_vector.x;
         entity.location.y += scaled_dist_vector.y;
@@ -239,22 +217,16 @@ void Physics::apply_physics(World &world, double dt) {
       entity.velocity = tangent_velocity + normal_velocity;
       whitelist.insert({result.index, result.owner});
     }
-    entity.location = sf::Vector3f(entity.location.x + entity.velocity.x * dt,
-                                   entity.location.y + entity.velocity.y * dt,
-                                   entity.location.z);
+    entity.location = sf::Vector3f(entity.location.x + entity.velocity.x * dt, entity.location.y + entity.velocity.y * dt, entity.location.z);
 
     dir = direction(entity.velocity);
     source = sf::Vector3f(entity.location.x, entity.location.y, dir);
   }
 }
 
-double Physics::dot(sf::Vector2f a, sf::Vector2f b) {
-  return a.x * b.x + a.y * b.y;
-}
+double Physics::dot(sf::Vector2f a, sf::Vector2f b) { return a.x * b.x + a.y * b.y; }
 
-sf::Vector2f Physics::scale(sf::Vector2f vec, double scalar) {
-  return sf::Vector2f(vec.x * scalar, vec.y * scalar);
-}
+sf::Vector2f Physics::scale(sf::Vector2f vec, double scalar) { return sf::Vector2f(vec.x * scalar, vec.y * scalar); }
 
 sf::Vector2f Physics::normalize(sf::Vector2f vec) {
   if (vec.x == 0 && vec.y == 0) {
@@ -264,9 +236,7 @@ sf::Vector2f Physics::normalize(sf::Vector2f vec) {
   return sf::Vector2f(vec.x / magnitude, vec.y / magnitude);
 }
 
-double Physics::mag(sf::Vector2f vec) {
-  return std::sqrt(vec.x * vec.x + vec.y * vec.y);
-}
+double Physics::mag(sf::Vector2f vec) { return std::sqrt(vec.x * vec.x + vec.y * vec.y); }
 
 double Physics::direction(sf::Vector2f vec) { return std::atan2(vec.y, vec.x); }
 
@@ -284,35 +254,23 @@ double Physics::to_radians(double angle) { return M_PI * angle / 180; }
 
 double Physics::to_degrees(double angle) { return 180 * angle / M_PI; }
 
-sf::Vector2f Physics::squash(sf::Vector3f input) {
-  return sf::Vector2f(input.x, input.y);
-}
+sf::Vector2f Physics::squash(sf::Vector3f input) { return sf::Vector2f(input.x, input.y); }
 
-sf::Vector2f Physics::ham(sf::Vector2f a, sf::Vector2f b) {
-  return sf::Vector2f(a.x * b.x, a.y * b.y);
-}
+sf::Vector2f Physics::ham(sf::Vector2f a, sf::Vector2f b) { return sf::Vector2f(a.x * b.x, a.y * b.y); }
 
 // Functions for Lua
 /// Addition
-sf::Vector3f vec3_add(const sf::Vector3f &a, const sf::Vector3f &b) {
-  return a + b;
-}
+sf::Vector3f vec3_add(const sf::Vector3f &a, const sf::Vector3f &b) { return a + b; }
 // Subtraction
-sf::Vector3f vec3_sub(const sf::Vector3f &a, const sf::Vector3f &b) {
-  return a - b;
-}
+sf::Vector3f vec3_sub(const sf::Vector3f &a, const sf::Vector3f &b) { return a - b; }
 // Scalar Multiplication (Vector * float)
 sf::Vector3f vec3_mul(const sf::Vector3f &a, float s) { return a * s; }
 // Unary Minus (Negation)
 sf::Vector3f vec3_neg(const sf::Vector3f &a) { return -a; }
 /// Addition
-sf::Vector2f vec2_add(const sf::Vector2f &a, const sf::Vector2f &b) {
-  return a + b;
-}
+sf::Vector2f vec2_add(const sf::Vector2f &a, const sf::Vector2f &b) { return a + b; }
 // Subtraction
-sf::Vector2f vec2_sub(const sf::Vector2f &a, const sf::Vector2f &b) {
-  return a - b;
-}
+sf::Vector2f vec2_sub(const sf::Vector2f &a, const sf::Vector2f &b) { return a - b; }
 // Scalar Multiplication (Vector * float)
 sf::Vector2f vec2_mul(const sf::Vector2f &a, float s) { return a * s; }
 // Unary Minus (Negation)

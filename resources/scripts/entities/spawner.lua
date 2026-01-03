@@ -2,6 +2,7 @@ local Spawner = {}
 local timer = 0
 local spawn_rate = 5 -- Seconds
 local wave = 1
+local started = false
 
 local function spawn_wave()
 	if GameData.player then
@@ -26,18 +27,27 @@ function Spawner:on_start()
 
 	self:add_tag("spawner")
 	self.id = "zombie_spawner"
-	-- Invisible, no model
+
+	self:set_model("resources/models/zombie.csv")
+
 	spawn_wave()
 end
 
+function Spawner:on_interact(entity)
+	started = true
+	self:set_model("")
+end
+
 function Spawner:on_update(dt)
-	timer = timer + dt
-	if timer > spawn_rate then
-		timer = 0
-		spawn_rate = math.max(1, spawn_rate * 0.95) -- Increase difficulty
-		wave = wave + 1
-		GameData.wave = wave
-		spawn_wave()
+	if started then
+		timer = timer + dt
+		if timer > spawn_rate then
+			timer = 0
+			spawn_rate = math.max(1, spawn_rate * 0.95) -- Increase difficulty
+			wave = wave + 1
+			GameData.wave = wave
+			spawn_wave()
+		end
 	end
 end
 

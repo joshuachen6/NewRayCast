@@ -168,7 +168,9 @@ void World::interact(Entity &entity, double distance) {
     }
     if (result.distance <= distance) {
       if (result.owner) {
-        result.owner->onInteract(result.owner, &entity);
+        if (result.owner->onInteract) {
+          result.owner->onInteract(result.owner, &entity);
+        }
       }
       break;
     }
@@ -192,6 +194,10 @@ void World::update(double dt) {
   for (int i = 0; i < entities.size(); ++i) {
     Entity *entity = entities[i].get();
     if (entity and not entity->deleted) {
+      if (entity->model_changed) {
+        entity->vertecies = load_model(entity->model);
+        entity->model_changed = false;
+      }
       entity->update(dt);
     }
   }

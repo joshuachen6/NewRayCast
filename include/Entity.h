@@ -1,4 +1,5 @@
 #pragma once
+#include "Vertex.h"
 #include <SFML/Graphics.hpp>
 #include <unordered_set>
 
@@ -21,6 +22,9 @@ public:
   bool is_static = false;
   bool has_collision = true;
   bool deleted = false;
+  bool model_changed = false;
+
+  std::vector<Vertex> vertecies;
 
   luabridge::LuaRef onStart;
   luabridge::LuaRef onCollide;
@@ -34,6 +38,7 @@ public:
 
   void addTag(std::string tag);
   bool hasTag(std::string tag);
+  void setModel(std::string model);
   void damage(float damage);
   void update(double dt);
 
