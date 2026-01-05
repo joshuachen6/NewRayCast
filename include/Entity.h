@@ -1,6 +1,7 @@
 #pragma once
 #include "Vertex.h"
 #include <SFML/Graphics.hpp>
+#include <cstdint>
 #include <unordered_set>
 
 #include <lua.hpp>
@@ -25,6 +26,7 @@ public:
   bool model_changed = false;
 
   std::vector<Vertex> vertecies;
+  std::vector<uint64_t> cells;
 
   luabridge::LuaRef onStart;
   luabridge::LuaRef onCollide;
@@ -33,8 +35,7 @@ public:
   luabridge::LuaRef onDamage;
   luabridge::LuaRef onDeath;
 
-  Entity(lua_State *L, const std::string &script,
-         sf::Vector3f location = sf::Vector3f());
+  Entity(lua_State *L, const std::string &script, sf::Vector3f location = sf::Vector3f());
 
   void addTag(std::string tag);
   bool hasTag(std::string tag);

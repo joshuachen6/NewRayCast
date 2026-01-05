@@ -1,7 +1,7 @@
-#include "World.h"
 #include "Entity.h"
 #include "LuaBridge/detail/LuaException.h"
 #include "Physics.h"
+#include "World.h"
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
 #include <mutex>
@@ -68,30 +68,21 @@ const std::vector<Vertex> &World::load_model(std::string model) {
       return model_map[model];
     }
 
-    spdlog::info("Loading model {}: {} vertices", model,
-                 document.GetRowCount());
+    spdlog::info("Loading model {}: {} vertices", model, document.GetRowCount());
 
     for (int i = 0; i < document.GetRowCount(); ++i) {
-      vertices.emplace_back(Vertex({document.GetCell<float>(x1Idx, i),
-                                    document.GetCell<float>(y1Idx, i)},
-                                   {document.GetCell<float>(x2Idx, i),
-                                    document.GetCell<float>(y2Idx, i)},
-                                   document.GetCell<float>(heightIdx, i),
-                                   document.GetCell<float>(zIdx, i),
-                                   document.GetCell<std::string>(modelIdx, i)));
+      vertices.emplace_back(Vertex({document.GetCell<float>(x1Idx, i), document.GetCell<float>(y1Idx, i)},
+                                   {document.GetCell<float>(x2Idx, i), document.GetCell<float>(y2Idx, i)}, document.GetCell<float>(heightIdx, i),
+                                   document.GetCell<float>(zIdx, i), document.GetCell<std::string>(modelIdx, i)));
     }
     model_map[model] = std::move(vertices);
   }
   return model_map[model];
 }
 
-void World::add_vertex(Vertex *vertex) {
-  vertices.push_back(std::unique_ptr<Vertex>(vertex));
-}
+void World::add_vertex(Vertex *vertex) { vertices.push_back(std::unique_ptr<Vertex>(vertex)); }
 
-void World::add_entity(Entity *entity) {
-  entities.push_back(std::unique_ptr<Entity>(entity));
-}
+void World::add_entity(Entity *entity) { entities.push_back(std::unique_ptr<Entity>(entity)); }
 
 void World::vertex_from_model(std::string model) {
   const std::vector<Vertex> &vertecies = load_model(model);
@@ -160,8 +151,7 @@ void World::spawn_scene(std::string scene, sf::Vector3f position) {
 }
 
 void World::interact(Entity &entity, double distance) {
-  std::vector<CastResult> results =
-      Physics::cast_ray(*this, entity.location, entity.location.z);
+  std::vector<CastResult> results = Physics::cast_ray(*this, entity.location, entity.location.z);
   for (CastResult &result : results) {
     if (result.owner == &entity) {
       continue;
@@ -179,6 +169,14 @@ void World::interact(Entity &entity, double distance) {
 
 void World::destroyEntity(Entity &entity) {
   entity.onDeath(&entity);
+  for (uint64_t key : entity.cells) {
+    std::vector<Entity *> &entities = cells[key].entities;
+    auto it = std::find(entities.begin(), entities.end(), &entity);
+    if (it != entities.end()) {
+      *it = entities.back();
+      entities.pop_back();
+    }
+  }
   entity.deleted = true;
 }
 

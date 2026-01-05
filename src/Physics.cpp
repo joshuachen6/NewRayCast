@@ -99,6 +99,34 @@ bool Physics::hits_vertex(Vertex &vertex, sf::Vector2f &point, const sf::Vector3
 void Physics::apply_physics(World &world, double dt) {
   for (int entity_index = 0; entity_index < world.entities.size(); entity_index++) {
     Entity &entity = *world.entities[entity_index];
+
+    if (entity.deleted) {
+      continue;
+    }
+
+    // Now add the entity to the cells
+    int xmin = (entity.location.x - entity.radius) / world.cellSize - 1;
+    int ymin = (entity.location.y - entity.radius) / world.cellSize - 1;
+    int xmax = (entity.location.x + entity.radius) / world.cellSize + 1;
+    int ymax = (entity.location.y + entity.radius) / world.cellSize + 1;
+
+    std::vector<uint64_t> cellsToCheck;
+
+    for (int y = ymin; y <= ymax; ++y) {
+      for (int x = xmin; x <= xmax; ++x) {
+
+        int xclosest = std::fmin(std::fmax(x * world.cellSize, entity.location.x), (x + 1) * world.cellSize);
+        int yclosest = std::fmin(std::fmax(y * world.cellSize, entity.location.y), (y + 1) * world.cellSize);
+
+        float xdist = (xclosest - entity.location.x);
+        float ydist = (yclosest - entity.location.y);
+        float dist = xdist * xdist + ydist * ydist;
+        if (dist <= entity.radius * entity.radius) {
+          cellsToCheck.push_back((((uint64_t)x) << 32) | ((uint32_t)y));
+        }
+      }
+    }
+
     entity.velocity += scale(entity.acceleration, dt);
 
     sf::Vector2f friction = scale(normalize(entity.velocity), world.friction * entity.mass * world.gravity * dt);
@@ -109,52 +137,56 @@ void Physics::apply_physics(World &world, double dt) {
     }
 
     // momentum
-    for (int other_index = entity_index + 1; other_index < world.entities.size(); other_index++) {
-      Entity &other = *world.entities[other_index];
-      sf::Vector2f distance_vector = squash(other.location) - squash(entity.location);
-      double distance = mag(distance_vector);
-      if (distance < entity.radius + other.radius) {
-        // Collision event
-        if (entity.onCollide.isFunction())
-          entity.onCollide(&entity, &other);
-        if (other.onCollide.isFunction())
-          other.onCollide(&other, &entity);
+    for (uint64_t key : cellsToCheck) {
+      std::vector<Entity *> &entities = world.cells[key].entities;
+      for (Entity *otherpointer : entities) {
+        Entity &other = *otherpointer;
+        sf::Vector2f distance_vector = squash(other.location) - squash(entity.location);
+        double distance = mag(distance_vector);
+        if (distance < entity.radius + other.radius) {
+          // Collision event
+          if (entity.onCollide.isFunction())
+            entity.onCollide(&entity, &other);
+          if (other.onCollide.isFunction())
+            other.onCollide(&other, &entity);
 
-        if (not entity.has_collision or not other.has_collision) {
-          continue;
-        }
+          if (not entity.has_collision or not other.has_collision) {
+            continue;
+          }
 
-        sf::Vector2f normalized_dist = normalize(distance_vector);
+          sf::Vector2f normalized_dist = normalize(distance_vector);
 
-        if (dot(distance_vector, entity.velocity - other.velocity) > 0) {
-          sf::Vector2f entity_normal = project(entity.velocity, normalized_dist);
-          sf::Vector2f other_normal = project(other.velocity, normalized_dist);
-          double new_velocity = (mag(entity_normal) * entity.mass + mag(other_normal) * other.mass) / (entity.mass + other.mass);
-          sf::Vector2f new_normal = scale(normalize(distance_vector), new_velocity);
+          if (dot(distance_vector, entity.velocity - other.velocity) > 0) {
+            sf::Vector2f entity_normal = project(entity.velocity, normalized_dist);
+            sf::Vector2f other_normal = project(other.velocity, normalized_dist);
+            double new_velocity = (mag(entity_normal) * entity.mass + mag(other_normal) * other.mass) / (entity.mass + other.mass);
+            sf::Vector2f new_normal = scale(normalize(distance_vector), new_velocity);
 
-          entity.velocity -= entity_normal;
-          other.velocity -= other_normal;
+            entity.velocity -= entity_normal;
+            other.velocity -= other_normal;
+
+            if (!other.is_static) {
+              entity.velocity += new_normal;
+              other.velocity += new_normal;
+            }
+          }
+
+          sf::Vector2f offset = scale(normalized_dist, distance - (entity.radius + other.radius));
 
           if (!other.is_static) {
-            entity.velocity += new_normal;
-            other.velocity += new_normal;
+            entity.location.x += offset.x / 2;
+            entity.location.y += offset.y / 2;
+            other.location.x -= offset.x / 2;
+            other.location.y -= offset.y / 2;
+          } else {
+            entity.location.x += offset.x;
+            entity.location.y += offset.y;
           }
-        }
-
-        sf::Vector2f offset = scale(normalized_dist, distance - (entity.radius + other.radius));
-
-        if (!other.is_static) {
-          entity.location.x += offset.x / 2;
-          entity.location.y += offset.y / 2;
-          other.location.x -= offset.x / 2;
-          other.location.y -= offset.y / 2;
-        } else {
-          entity.location.x += offset.x;
-          entity.location.y += offset.y;
         }
       }
     }
 
+    // Ray-cast based collision
     std::vector<CastResult> potential_hits;
     std::set<std::pair<int, Entity *>> whitelist;
 
@@ -221,6 +253,21 @@ void Physics::apply_physics(World &world, double dt) {
 
     dir = direction(entity.velocity);
     source = sf::Vector3f(entity.location.x, entity.location.y, dir);
+
+    for (uint64_t key : entity.cells) {
+      std::vector<Entity *> &entities = world.cells[key].entities;
+      auto it = std::find(entities.begin(), entities.end(), &entity);
+      if (it != entities.end()) {
+        *it = entities.back();
+        entities.pop_back();
+      }
+    }
+    entity.cells.clear();
+
+    for (uint64_t key : cellsToCheck) {
+      entity.cells.push_back(key);
+      world.cells[key].entities.push_back(&entity);
+    }
   }
 }
 

@@ -1,8 +1,10 @@
 #pragma once
+#include "Cell.h"
 #include "Entity.h"
 #include "SFML/System/Vector3.hpp"
 #include "Vertex.h"
 #include <SFML/Graphics.hpp>
+#include <cstdint>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -24,10 +26,13 @@ public:
   std::vector<std::unique_ptr<Vertex>> vertices;
   std::vector<std::unique_ptr<Entity>> entities;
 
+  std::unordered_map<uint64_t, Cell> cells;
+  float cellSize = 100;
+
   int brightness = 255;
 
-  double friction = 2;
-  double gravity = 1;
+  float friction = 2;
+  float gravity = 1;
   std::string sky_texture;
   std::string ground_texture;
 
