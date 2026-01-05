@@ -57,5 +57,7 @@ public:
 
   void clear_cache();
 
+  uint64_t getKey(int x, int y);
+
   static void initLua(lua_State *L);
 };

@@ -7,5 +7,5 @@ struct CastResult {
   Entity *owner;
   sf::Vector2f point;
   sf::Vector3f ownerLocation;
-  double distance;
+  float distance;
 };

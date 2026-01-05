@@ -80,7 +80,21 @@ const std::vector<Vertex> &World::load_model(std::string model) {
   return model_map[model];
 }
 
-void World::add_vertex(Vertex *vertex) { vertices.push_back(std::unique_ptr<Vertex>(vertex)); }
+void World::add_vertex(Vertex *vertex) {
+  vertices.push_back(std::unique_ptr<Vertex>(vertex));
+
+  // Add to relevant cells
+  int xmin = std::floor(std::min(vertex->start.x, vertex->end.x) / cellSize);
+  int xmax = std::floor(std::max(vertex->start.x, vertex->end.x) / cellSize);
+  int ymin = std::floor(std::min(vertex->start.y, vertex->end.y) / cellSize);
+  int ymax = std::floor(std::max(vertex->start.y, vertex->end.y) / cellSize);
+
+  for (int y = ymin; y <= ymax; ++y) {
+    for (int x = xmin; x <= xmax; ++x) {
+      cells[getKey(x, y)].vertices.push_back(vertex);
+    }
+  }
+}
 
 void World::add_entity(Entity *entity) { entities.push_back(std::unique_ptr<Entity>(entity)); }
 
@@ -95,7 +109,7 @@ void World::spawn_model(std::string model, sf::Vector3f position) {
   const std::vector<Vertex> &vertices = load_model(model);
   for (const Vertex &vertex : vertices) {
     Vertex temp = vertex.translated(position);
-    this->vertices.push_back(std::make_unique<Vertex>(temp));
+    add_vertex(new Vertex(temp));
   }
 }
 
@@ -151,19 +165,17 @@ void World::spawn_scene(std::string scene, sf::Vector3f position) {
 }
 
 void World::interact(Entity &entity, double distance) {
-  std::vector<CastResult> results = Physics::cast_ray(*this, entity.location, entity.location.z);
+  std::vector<CastResult> results = Physics::cast_ray(*this, entity.location, entity.location.z, distance);
   for (CastResult &result : results) {
     if (result.owner == &entity) {
       continue;
     }
-    if (result.distance <= distance) {
-      if (result.owner) {
-        if (result.owner->onInteract) {
-          result.owner->onInteract(result.owner, &entity);
-        }
+    if (result.owner) {
+      if (result.owner->onInteract) {
+        result.owner->onInteract(result.owner, &entity);
       }
-      break;
     }
+    break;
   }
 }
 
@@ -214,6 +226,8 @@ void World::cleanup() {
     }
   }
 }
+
+uint64_t World::getKey(int x, int y) { return ((uint64_t)(uint32_t)x << 32) | (uint32_t)y; }
 
 void World::initLua(lua_State *L) {
   luabridge::getGlobalNamespace(L)
