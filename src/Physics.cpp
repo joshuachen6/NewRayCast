@@ -40,7 +40,7 @@ std::vector<CastResult> Physics::cast_ray(World &world, const sf::Vector3f &sour
       sf::Vector2f hit;
       if (hits_vertex(*vertex, hit, source, slope, lvector)) {
         float distance = sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
-        hits.push_back(CastResult(i, nullptr, sf::Vector2f(hit.x, hit.y), {}, distance));
+        hits.push_back(CastResult(i, nullptr, sf::Vector2f(hit.x, hit.y), {}, distance, vertex));
       }
     }
 
@@ -54,7 +54,7 @@ std::vector<CastResult> Physics::cast_ray(World &world, const sf::Vector3f &sour
         Vertex temp = vertex.translated(entity->location);
         if (hits_vertex(temp, hit, source, slope, lvector)) {
           float distance = sqrt(pow(hit.x - source.x, 2) + pow(hit.y - source.y, 2));
-          hits.push_back(CastResult(i, entity, sf::Vector2f(hit.x, hit.y), entity->location, distance));
+          hits.push_back(CastResult(i, entity, sf::Vector2f(hit.x, hit.y), entity->location, distance, &vertex));
         }
       }
     }
@@ -203,7 +203,7 @@ void Physics::apply_physics(World &world, float dt) {
 
     // Ray-cast based collision
     std::vector<CastResult> potential_hits;
-    std::set<std::pair<int, Entity *>> whitelist;
+    std::set<const Vertex *> whitelist;
 
     float dir = direction(entity.velocity);
     sf::Vector3f source(entity.location.x, entity.location.y, dir);
@@ -213,7 +213,7 @@ void Physics::apply_physics(World &world, float dt) {
       bool valid = true;
       CastResult &result = potential_hits[0];
       int i = 0;
-      while (whitelist.contains({result.index, result.owner}) or result.owner == &entity or (result.owner and not result.owner->has_collision)) {
+      while (whitelist.contains(result.vertex) or result.owner == &entity or (result.owner and not result.owner->has_collision)) {
         i++;
         if (i >= potential_hits.size()) {
           valid = false;
@@ -238,9 +238,8 @@ void Physics::apply_physics(World &world, float dt) {
         break;
       }
 
-      const Vertex &temp = result.owner ? result.owner->vertecies[result.index] : *world.vertices[result.index];
-
-      Vertex vertex = result.owner ? temp.translated(result.ownerLocation) : temp;
+      const Vertex &temp = *result.vertex;
+      Vertex vertex = result.owner ? result.owner->translated[result.index] : temp;
 
       sf::Vector2f wall_tangent = normalize(vertex.start - vertex.end);
       sf::Vector2f wall_normal = sf::Vector2f(-wall_tangent.y, wall_tangent.x);
@@ -263,7 +262,7 @@ void Physics::apply_physics(World &world, float dt) {
       }
 
       entity.velocity = tangent_velocity + normal_velocity;
-      whitelist.insert({result.index, result.owner});
+      whitelist.insert(result.vertex);
     }
     entity.location = sf::Vector3f(entity.location.x + entity.velocity.x * dt, entity.location.y + entity.velocity.y * dt, entity.location.z);
 

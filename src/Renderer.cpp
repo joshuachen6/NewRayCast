@@ -136,10 +136,11 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov, double ray
         if (closest.owner and closest.owner->location == camera) {
           continue;
         }
-        const Vertex &temp = closest.owner ? closest.owner->vertecies[closest.index] : *world.vertices[closest.index];
 
-        Vertex vertex = closest.owner ? temp.translated(closest.ownerLocation) : temp;
+        const Vertex &temp = *closest.vertex;
+        Vertex vertex = closest.owner ? closest.owner->translated[closest.index] : temp;
         sf::Texture *texture = world.load_texture(vertex.texture);
+
         if (texture) {
           sf::Sprite *sprite = get_column(texture, vertex, closest.point, std::ceil(xoffset));
           double trueDistance = closest.distance * cos(offset * i);

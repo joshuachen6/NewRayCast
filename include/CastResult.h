@@ -8,4 +8,5 @@ struct CastResult {
   sf::Vector2f point;
   sf::Vector3f ownerLocation;
   float distance;
+  const Vertex *vertex;
 };

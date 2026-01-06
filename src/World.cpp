@@ -118,7 +118,9 @@ Entity *World::spawn_entity(std::string entity, sf::Vector3f position) {
     lua_State *L = onStart.state();
     Entity *entityObject = new Entity(L, entity, position);
     try {
-      entityObject->onStart(entityObject);
+      if (entityObject->onStart) {
+        entityObject->onStart(entityObject);
+      }
     } catch (const luabridge::LuaException &e) {
       spdlog::error("Luabridge execption starting entity {}", e.what());
     }
@@ -207,6 +209,7 @@ void World::update(double dt) {
       if (entity->model_changed) {
         entity->vertecies = load_model(entity->model);
         entity->model_changed = false;
+        entity->translate();
       }
       entity->update(dt);
     }

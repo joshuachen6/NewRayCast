@@ -1,4 +1,5 @@
 #pragma once
+#include "SFML/System/Vector2.hpp"
 #include "Vertex.h"
 #include <SFML/Graphics.hpp>
 #include <cstdint>
@@ -25,7 +26,10 @@ public:
   bool deleted = false;
   bool model_changed = false;
 
+  sf::Vector3f lastLocation;
+
   std::vector<Vertex> vertecies;
+  std::vector<Vertex> translated;
   std::vector<uint64_t> cells;
 
   luabridge::LuaRef onStart;
@@ -42,6 +46,7 @@ public:
   void setModel(std::string model);
   void damage(float damage);
   void update(double dt);
+  void translate();
 
   static void initLua(lua_State *L);
 };

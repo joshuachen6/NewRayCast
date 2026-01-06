@@ -4,8 +4,7 @@
 #include <spdlog/spdlog.h>
 
 Entity::Entity(lua_State *L, const std::string &script, sf::Vector3f location)
-    : onStart(L), onCollide(L), onUpdate(L), onInteract(L), onDamage(L),
-      onDeath(L) {
+    : onStart(L), onCollide(L), onUpdate(L), onInteract(L), onDamage(L), onDeath(L) {
   this->location = location;
   this->script = script;
 
@@ -22,6 +21,8 @@ Entity::Entity(lua_State *L, const std::string &script, sf::Vector3f location)
   } else {
     spdlog::error("Failed to read script {}", script);
   }
+
+  translate();
 }
 
 void Entity::addTag(std::string tag) { tags.insert(tag); }
@@ -43,7 +44,19 @@ void Entity::damage(float damage) {
   }
 }
 
+void Entity::translate() {
+  translated.clear();
+  translated.reserve(vertecies.size());
+  for (Vertex &vertex : vertecies) {
+    translated.push_back(std::move(vertex.translated(location)));
+  }
+  lastLocation = location;
+}
+
 void Entity::update(double dt) {
+  if (lastLocation != location) {
+    translate();
+  }
   try {
     if (onUpdate) {
       onUpdate(this, dt);
