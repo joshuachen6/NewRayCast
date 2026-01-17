@@ -14,20 +14,35 @@ std::vector<CastResult> Physics::cast_ray(World &world, const sf::Vector3f &sour
   sf::Vector2f lvector(cos(angle), sin(angle));
 
   // Find the cells to check
-  sf::Vector2f end = {source.x + distance * cos(angle), source.y + distance * sin(angle)};
-  int xmin = std::floor(std::min(source.x, end.x) / world.cellSize);
-  int xmax = std::floor(std::max(source.x, end.x) / world.cellSize);
-  int ymin = std::floor(std::min(source.y, end.y) / world.cellSize);
-  int ymax = std::floor(std::max(source.y, end.y) / world.cellSize);
+  sf::Vector2f start = Physics::squash(source) / world.cellSize;
+  sf::Vector2f end = (start + lvector * distance) / world.cellSize;
+  sf::Vector2f delta = end - start;
+
+  sf::Vector2i ray(std::floor(start.x), std::floor(start.y));
+
+  sf::Vector2i step(end.x > start.x ? 1.f : -1.f, end.y > start.y ? 1.f : -1.f);
+  sf::Vector2f tDelta(std::abs(1 / delta.x), std::abs(1 / delta.y));
+
+  sf::Vector2f tMax((std::abs(std::floor(start.x + (end.x > start.x ? 1 : 0)) - start.x)) * tDelta.x,
+                    (std::abs(std::floor(start.y + (end.y > start.y ? 1 : 0)) - start.y)) * tDelta.y);
 
   std::vector<Cell *> cellsToCheck;
 
-  for (int y = ymin; y <= ymax; ++y) {
-    for (int x = xmin; x <= xmax; ++x) {
-      uint64_t key = world.getKey(x, y);
-      if (world.cells.contains(key)) {
-        cellsToCheck.push_back(&world.cells[key]);
-      }
+  int steps = std::abs(std::floor(end.x) - ray.x) + std::abs(std::floor(end.y) - ray.y);
+
+  for (int i = 0; i < steps; ++i) {
+    uint64_t key = world.getKey(ray.x, ray.y);
+    auto it = world.cells.find(key);
+    if (it != world.cells.end()) {
+      cellsToCheck.push_back(&it->second);
+    }
+
+    if (std::abs(tMax.x) < std::abs(tMax.y)) {
+      tMax.x += tDelta.x;
+      ray.x += step.x;
+    } else {
+      tMax.y += tDelta.y;
+      ray.y += step.y;
     }
   }
 
@@ -45,8 +60,9 @@ std::vector<CastResult> Physics::cast_ray(World &world, const sf::Vector3f &sour
     }
 
     for (Entity *entity : cell->entities) {
-      if (entity->model.empty())
+      if (not entity or entity->deleted or entity->model.empty()) {
         continue;
+      }
       sf::Vector2f hit;
       const std::vector<Vertex> &vertices = entity->vertecies;
       for (int i = 0; i < vertices.size(); ++i) {
@@ -153,9 +169,18 @@ void Physics::apply_physics(World &world, float dt) {
 
     // Momentum based collision
     for (uint64_t key : cellsToCheck) {
-      std::vector<Entity *> &entities = world.cells[key].entities;
+      if (!world.cells.contains(key))
+        continue;
+      std::vector<Entity *> entities = world.cells[key].entities;
       for (Entity *otherpointer : entities) {
+        if (!otherpointer)
+          continue;
         Entity &other = *otherpointer;
+
+        if (otherpointer == &entity or other.deleted) {
+          continue;
+        }
+
         sf::Vector2f distance_vector = squash(other.location) - squash(entity.location);
         float distance = mag(distance_vector);
         if (distance < entity.radius + other.radius) {
@@ -168,6 +193,9 @@ void Physics::apply_physics(World &world, float dt) {
           if (not entity.has_collision or not other.has_collision) {
             continue;
           }
+
+          if (entity.deleted || other.deleted)
+            continue; // Re-check after callbacks
 
           sf::Vector2f normalized_dist = normalize(distance_vector);
 
@@ -201,6 +229,10 @@ void Physics::apply_physics(World &world, float dt) {
       }
     }
 
+    if (entity.deleted) {
+      continue;
+    }
+
     // Ray-cast based collision
     std::vector<CastResult> potential_hits;
     std::set<const Vertex *> whitelist;
@@ -232,6 +264,9 @@ void Physics::apply_physics(World &world, float dt) {
 
       if (not result.owner and entity.onCollide) {
         entity.onCollide(&entity);
+        if (entity.deleted) {
+          break;
+        }
       }
 
       if (not entity.has_collision) {
@@ -264,6 +299,11 @@ void Physics::apply_physics(World &world, float dt) {
       entity.velocity = tangent_velocity + normal_velocity;
       whitelist.insert(result.vertex);
     }
+
+    if (entity.deleted) {
+      continue;
+    }
+
     entity.location = sf::Vector3f(entity.location.x + entity.velocity.x * dt, entity.location.y + entity.velocity.y * dt, entity.location.z);
 
     dir = direction(entity.velocity);
@@ -279,6 +319,27 @@ void Physics::apply_physics(World &world, float dt) {
       }
     }
     entity.cells.clear();
+
+    cellsToCheck.clear();
+    xmin = std::floor((entity.location.x - entity.radius) / world.cellSize - 1);
+    ymin = std::floor((entity.location.y - entity.radius) / world.cellSize - 1);
+    xmax = std::floor((entity.location.x + entity.radius) / world.cellSize + 1);
+    ymax = std::floor((entity.location.y + entity.radius) / world.cellSize + 1);
+
+    for (int y = ymin; y <= ymax; ++y) {
+      for (int x = xmin; x <= xmax; ++x) {
+
+        int xclosest = std::fmin(std::fmax(x * world.cellSize, entity.location.x), (x + 1) * world.cellSize);
+        int yclosest = std::fmin(std::fmax(y * world.cellSize, entity.location.y), (y + 1) * world.cellSize);
+
+        float xdist = (xclosest - entity.location.x);
+        float ydist = (yclosest - entity.location.y);
+        float dist = xdist * xdist + ydist * ydist;
+        if (dist <= entity.radius * entity.radius) {
+          cellsToCheck.push_back(world.getKey(x, y));
+        }
+      }
+    }
 
     // Add entity to newly occupied cells
     for (uint64_t key : cellsToCheck) {
