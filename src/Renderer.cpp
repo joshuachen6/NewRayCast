@@ -1,5 +1,5 @@
-#include "Renderer.h"
 #include "Physics.h"
+#include "Renderer.h"
 #include "SFML/Graphics/Sprite.hpp"
 #include "SFML/System/Vector2.hpp"
 #include "SFML/System/Vector3.hpp"
@@ -13,12 +13,10 @@
 
 const float MAX_RENDER_DIST = 500 * METER;
 
-sf::Sprite *Renderer::get_column(sf::Texture *texture, const Vertex &vertex,
-                                 sf::Vector2f &collision, int cols) {
+sf::Sprite *Renderer::get_column(sf::Texture *texture, const Vertex &vertex, sf::Vector2f &collision, int cols) {
   sf::Sprite *sprite = new sf::Sprite(*texture);
   double scale = texture->getSize().x / vertex.length();
-  double left = sqrt(pow(collision.x - vertex.start.x, 2) +
-                     pow(collision.y - vertex.start.y, 2));
+  double left = sqrt(pow(collision.x - vertex.start.x, 2) + pow(collision.y - vertex.start.y, 2));
 
   int texX = static_cast<int>(left * scale);
   int texWidth = cols;
@@ -46,8 +44,7 @@ void Renderer::draw_minimap(World &world, sf::Vector3f &camera) {
   double on_screen_radius = window->getSize().y / 6;
   double padding = on_screen_radius / 5;
   double scale = on_screen_radius / range * 0.8;
-  sf::Vector2f center(window->getSize().x - on_screen_radius - padding,
-                      on_screen_radius + padding);
+  sf::Vector2f center(window->getSize().x - on_screen_radius - padding, on_screen_radius + padding);
 
   sf::CircleShape dish(on_screen_radius);
   dish.setOutlineColor(sf::Color::White);
@@ -58,15 +55,9 @@ void Renderer::draw_minimap(World &world, sf::Vector3f &camera) {
 
   sf::Vector2f pos = Physics::squash(camera);
   for (const std::unique_ptr<Vertex> &vertex : world.vertices) {
-    if (Physics::distance(pos, vertex->start) < range &&
-        Physics::distance(pos, vertex->start) < range) {
-      sf::Vertex line[] = {
-          sf::Vertex(Physics::ham(Physics::scale(vertex->start - pos, scale),
-                                  sf::Vector2f(1, -1)) +
-                     center),
-          sf::Vertex(Physics::ham(Physics::scale(vertex->end - pos, scale),
-                                  sf::Vector2f(1, -1)) +
-                     center)};
+    if (Physics::distance(pos, vertex->start) < range && Physics::distance(pos, vertex->start) < range) {
+      sf::Vertex line[] = {sf::Vertex(Physics::ham(Physics::scale(vertex->start - pos, scale), sf::Vector2f(1, -1)) + center),
+                           sf::Vertex(Physics::ham(Physics::scale(vertex->end - pos, scale), sf::Vector2f(1, -1)) + center)};
 
       window->draw(line, on_screen_radius / 50, sf::Lines);
     }
@@ -78,26 +69,16 @@ void Renderer::draw_minimap(World &world, sf::Vector3f &camera) {
       double raidus = entity->radius * scale;
       sf::CircleShape indicator(raidus);
       indicator.setFillColor(sf::Color::Red);
-      indicator.setPosition(
-          Physics::ham(Physics::scale(entity_pos - pos, scale),
-                       sf::Vector2f(1, -1)) +
-          center - sf::Vector2f(raidus, raidus));
+      indicator.setPosition(Physics::ham(Physics::scale(entity_pos - pos, scale), sf::Vector2f(1, -1)) + center - sf::Vector2f(raidus, raidus));
       window->draw(indicator);
     }
   }
 
   if (debug) {
     for (const std::unique_ptr<Entity> &entity : world.entities) {
-      sf::Vector2f entity_center =
-          Physics::ham(
-              Physics::scale(Physics::squash(entity->location) - pos, scale),
-              sf::Vector2f(1, -1)) +
-          center;
-      sf::Vertex vel[] = {
-          sf::Vertex(entity_center),
-          sf::Vertex(entity_center +
-                     Physics::ham(Physics::scale(entity->velocity, scale),
-                                  sf::Vector2f(1, -1)))};
+      sf::Vector2f entity_center = Physics::ham(Physics::scale(Physics::squash(entity->location) - pos, scale), sf::Vector2f(1, -1)) + center;
+      sf::Vertex vel[] = {sf::Vertex(entity_center),
+                          sf::Vertex(entity_center + Physics::ham(Physics::scale(entity->velocity, scale), sf::Vector2f(1, -1)))};
       vel[0].color = sf::Color::Cyan;
       vel[1].color = sf::Color::Green;
       window->draw(vel, 2, sf::Lines);
@@ -112,8 +93,7 @@ void Renderer::draw_minimap(World &world, sf::Vector3f &camera) {
     cursor.setFillColor(sf::Color::Blue);
     cursor.setPosition(center - sf::Vector2f(radius, radius) + offset);
     window->draw(cursor);
-    offset +=
-        sf::Vector2f(radius * std::cos(camera.z), -radius * std::sin(camera.z));
+    offset += sf::Vector2f(radius * std::cos(camera.z), -radius * std::sin(camera.z));
   }
 }
 
@@ -134,17 +114,14 @@ Renderer::Renderer(sf::RenderWindow &window) {
   show_minimap = true;
 }
 
-void Renderer::update(World &world, sf::Vector3f &camera, double fov,
-                      double rays, double dt) {
+void Renderer::update(World &world, sf::Vector3f &camera, double fov, double rays, double dt) {
   render_texture.clear();
 
   // Render panorama
   sf::Sprite sky;
   sky.setTexture(*world.load_texture(world.sky_texture));
-  sky.setScale(double(render_texture.getSize().x * (2 * M_PI / fov)) /
-                   sky.getTexture()->getSize().x,
-               (render_texture.getSize().y / 2.0) /
-                   sky.getTexture()->getSize().y);
+  sky.setScale(double(render_texture.getSize().x * (2 * M_PI / fov)) / sky.getTexture()->getSize().x,
+               (render_texture.getSize().y / 2.0) / sky.getTexture()->getSize().y);
   double skyOffset = sky.getTexture()->getSize().x * (camera.z / (2 * M_PI));
 
   sky.setPosition(skyOffset - sky.getTexture()->getSize().x / 2, 0);
@@ -155,67 +132,52 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
   // Ground
   sf::Sprite ground;
   ground.setTexture(*world.load_texture(world.ground_texture));
-  ground.setScale(
-      double(render_texture.getSize().x) / ground.getTexture()->getSize().x,
-      (render_texture.getSize().y / 2.0) / ground.getTexture()->getSize().y);
+  ground.setScale(double(render_texture.getSize().x) / ground.getTexture()->getSize().x,
+                  (render_texture.getSize().y / 2.0) / ground.getTexture()->getSize().y);
   ground.setPosition(0, render_texture.getSize().y / 2);
   render_texture.draw(ground);
 
   // Ray casting
   double offset = fov / rays;
   double xoffset = render_texture.getSize().x / rays;
-  boost::integer_range<int> ops =
-      boost::irange<int>((int)(-rays / 2), (int)(rays / 2));
+  boost::integer_range<int> ops = boost::irange<int>((int)(-rays / 2), (int)(rays / 2));
   boost::lockfree::queue<sf::Sprite *> sprite_queue(0);
 
-  std::for_each(
-      std::execution::par_unseq, ops.begin(), ops.end(), [&](const int &i) {
-        double angle = Physics::scale_angle(offset * i + camera.z);
+  std::for_each(std::execution::par_unseq, ops.begin(), ops.end(), [&](const int &i) {
+    double angle = Physics::scale_angle(offset * i + camera.z);
 
-        std::vector<CastResult> hits =
-            Physics::cast_ray(world, camera, angle, MAX_RENDER_DIST);
-        if (hits.size()) {
-          for (int j = hits.size() - 1; j >= 0; j--) {
-            CastResult &closest = hits[j];
-            if (closest.owner and closest.owner->location == camera) {
-              continue;
-            }
-
-            const Vertex &temp = *closest.vertex;
-            Vertex vertex =
-                closest.owner ? closest.owner->translated[closest.index] : temp;
-            sf::Texture *texture = world.load_texture(vertex.texture);
-
-            if (texture) {
-              sf::Sprite *sprite = get_column(texture, vertex, closest.point,
-                                              std::ceil(xoffset));
-              double trueDistance = closest.distance * cos(offset * i);
-              double vScale = (vertex.height / trueDistance) *
-                              (((double)render_texture.getSize().y) /
-                               sprite->getTextureRect().height);
-              double height = render_texture.getSize().y / 2 -
-                              sprite->getTextureRect().height / 2 * vScale;
-              double dist = (METER - vertex.height - vertex.z) /
-                            (2 * trueDistance) * render_texture.getSize().y;
-              sprite->setScale(1, vScale);
-              sprite->setPosition(
-                  sf::Vector2f(-i * xoffset + render_texture.getSize().x / 2 -
-                                   sprite->getTextureRect().width / 2,
-                               height + dist));
-
-              // make sprites darker to create fog effect
-              if (closest.distance > 0) {
-                double darkness =
-                    std::fmax(1, std::sqrt(closest.distance / METER));
-                sprite->setColor(sf::Color(255 / darkness, 255 / darkness,
-                                           255 / darkness, 255 / darkness));
-              }
-
-              sprite_queue.push(sprite);
-            }
-          }
+    std::vector<CastResult> hits = Physics::cast_ray(world, camera, angle, MAX_RENDER_DIST);
+    if (hits.size()) {
+      for (int j = hits.size() - 1; j >= 0; j--) {
+        CastResult &closest = hits[j];
+        if (closest.owner and closest.owner->location == camera) {
+          continue;
         }
-      });
+
+        const Vertex &temp = *closest.vertex;
+        Vertex vertex = closest.owner ? closest.owner->translated[closest.index] : temp;
+        sf::Texture *texture = world.load_texture(vertex.texture);
+
+        if (texture) {
+          sf::Sprite *sprite = get_column(texture, vertex, closest.point, std::ceil(xoffset));
+          double trueDistance = closest.distance * cos(offset * i);
+          double vScale = (vertex.height / trueDistance) * (((double)render_texture.getSize().y) / sprite->getTextureRect().height);
+          double height = render_texture.getSize().y / 2 - sprite->getTextureRect().height / 2 * vScale;
+          double dist = (METER - vertex.height - vertex.z) / (2 * trueDistance) * render_texture.getSize().y;
+          sprite->setScale(1, vScale);
+          sprite->setPosition(sf::Vector2f(-i * xoffset + render_texture.getSize().x / 2 - sprite->getTextureRect().width / 2, height + dist));
+
+          // make sprites darker to create fog effect
+          if (closest.distance > 0) {
+            double darkness = std::fmax(1, std::sqrt(closest.distance / METER));
+            sprite->setColor(sf::Color(255 / darkness, 255 / darkness, 255 / darkness, 255 / darkness));
+          }
+
+          sprite_queue.push(sprite);
+        }
+      }
+    }
+  });
   while (!sprite_queue.empty()) {
     sf::Sprite *sprite;
     sprite_queue.pop(sprite);
@@ -225,20 +187,17 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
 
   render_texture.display();
   post_shader.setUniform("time", float(dt));
-  post_shader.setUniform(
-      "resolution", sf::Vector2f(window->getSize().x, window->getSize().y));
+  post_shader.setUniform("resolution", sf::Vector2f(window->getSize().x, window->getSize().y));
 
   window->clear();
   sf::Sprite scene;
   scene.setTexture(render_texture.getTexture());
-  scene.setScale(double(window->getSize().x) / scene.getTexture()->getSize().x,
-                 double(window->getSize().y) / scene.getTexture()->getSize().y);
+  scene.setScale(double(window->getSize().x) / scene.getTexture()->getSize().x, double(window->getSize().y) / scene.getTexture()->getSize().y);
   window->draw(scene, &post_shader);
 
   // Apply the darkness (brightness)
   sf::Color color(0, 0, 0, 255 - world.brightness);
-  drawRectangle({0, 0}, sf::Vector2f(window->getSize().x, window->getSize().y),
-                color);
+  drawRectangle({0, 0}, sf::Vector2f(window->getSize().x, window->getSize().y), color);
 
   // draw hud here so its not noised
   if (show_minimap) {
@@ -255,16 +214,13 @@ void Renderer::update(World &world, sf::Vector3f &camera, double fov,
     title.setCharacterSize(24);
     window->draw(title);
 
-    sf::Text pos =
-        text_of(std::format("Position ({}, {})", int(camera.x), int(camera.y)),
-                fontPath);
+    sf::Text pos = text_of(std::format("Position ({}, {})", int(camera.x), int(camera.y)), fontPath);
     pos.setFillColor(sf::Color::Cyan);
     pos.setCharacterSize(16);
     pos.setPosition(0, 24);
     window->draw(pos);
 
-    sf::Text yaw = text_of(
-        std::format("Yaw {}", int(Physics::to_degrees(camera.z))), fontPath);
+    sf::Text yaw = text_of(std::format("Yaw {}", int(Physics::to_degrees(camera.z))), fontPath);
     yaw.setFillColor(sf::Color::Green);
     yaw.setCharacterSize(16);
     yaw.setPosition(0, 56);
@@ -286,8 +242,7 @@ sf::Font &Renderer::getFont(std::string font) {
   return font_map[font];
 }
 
-void Renderer::drawRectangle(sf::Vector2f position, sf::Vector2f size,
-                             sf::Color color) {
+void Renderer::drawRectangle(sf::Vector2f position, sf::Vector2f size, sf::Color color) {
   sf::RectangleShape rect(size);
   rect.setPosition(position);
   rect.setFillColor(color);
@@ -301,8 +256,7 @@ void Renderer::drawCircle(sf::Vector2f position, int radius, sf::Color color) {
   window->draw(circle);
 }
 
-void Renderer::drawText(sf::Vector2f position, std::string font,
-                        std::string text, int size, sf::Color color) {
+void Renderer::drawText(sf::Vector2f position, std::string font, std::string text, int size, sf::Color color) {
 
   sf::Text textObject;
   textObject.setFont(getFont(font));
@@ -313,9 +267,7 @@ void Renderer::drawText(sf::Vector2f position, std::string font,
   window->draw(textObject);
 }
 
-void Renderer::drawTextWrapped(sf::Vector2f position, std::string font,
-                               std::string text, int size, sf::Color color,
-                               int width) {
+void Renderer::drawTextWrapped(sf::Vector2f position, std::string font, std::string text, int size, sf::Color color, int width) {
   sf::Text textObject;
   textObject.setFont(getFont(font));
   textObject.setFillColor(color);
@@ -338,8 +290,7 @@ void Renderer::drawTextWrapped(sf::Vector2f position, std::string font,
   window->draw(textObject);
 }
 
-void Renderer::drawSprite(sf::Vector2f position, sf::Vector2f size,
-                          std::string sprite) {
+void Renderer::drawSprite(sf::Vector2f position, sf::Vector2f size, std::string sprite) {
   sf::Texture *texture = load_texture(sprite);
   sf::Sprite s;
   sf::Vector2u textureSize = texture->getSize();
@@ -364,9 +315,7 @@ sf::Texture *Renderer::load_texture(std::string texture) {
   return &texture_map[texture];
 }
 
-sf::Vector2f Renderer::getSize() {
-  return sf::Vector2f(window->getSize().x, window->getSize().y);
-}
+sf::Vector2f Renderer::getSize() { return sf::Vector2f(window->getSize().x, window->getSize().y); }
 
 void Renderer::initLua(lua_State *L) {
   luabridge::getGlobalNamespace(L)
