@@ -11,13 +11,14 @@ function World:on_start()
 	-- Initialize Game Data
 	GameData.score = 0
 	GameData.wave = 1
+	GameData.enemies_remaining = 0
 	GameData.game_over = false
 
 	-- Spawn Player at origin
 	self:spawn_entity("resources/scripts/entities/player.lua", Vector3(0, 0, 0))
 
-	-- Spawn Spawner
-	self:spawn_entity("resources/scripts/entities/spawner.lua", Vector3(0, 0, 0))
+	-- Spawn Spawner at a distance (300 units away)
+	self:spawn_entity("resources/scripts/entities/spawner.lua", Vector3(300, 300, 0))
 end
 
 return World
